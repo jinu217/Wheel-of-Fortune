@@ -13,10 +13,8 @@ public class ProceduralMapGenerator : MonoBehaviour
     [SerializeField] private RectTransform mapContent;
     [Tooltip("노드 사이의 연결선을 그릴 컴포넌트입니다.")]
     [SerializeField] private MapConnectionRenderer connectionRenderer;
-    [Tooltip("전투 노드에 무작위로 배정할 몬스터 데이터 목록입니다.")]
-    [SerializeField] private List<MonsterData> monsterPool = new List<MonsterData>();
-    [Tooltip("12층 보스 노드에 무작위로 배정할 보스 데이터 목록입니다. 비어 있으면 일반 몬스터 목록을 사용합니다.")]
-    [SerializeField] private List<MonsterData> bossPool = new List<MonsterData>();
+    [Tooltip("일반 몬스터, 보스, 미믹이 모두 등록된 몬스터 데이터베이스입니다.")]
+    [SerializeField] private MonsterDatabase monsterDatabase;
 
     [Header("UI 배치")]
     [Tooltip("가로(X)와 세로(Y) 노드 사이 간격입니다.")]
@@ -25,6 +23,24 @@ public class ProceduralMapGenerator : MonoBehaviour
     [SerializeField] private Vector2 positionJitter = new Vector2(25f, 15f);
     [Tooltip("스크롤 영역 위아래에 추가할 여백입니다.")]
     [Min(0f)] [SerializeField] private float verticalPadding = 300f;
+
+    [Header("2~10층 이벤트 비율")]
+    [Tooltip("2~10층에서 몬스터 전투 노드가 나올 상대 비율입니다.")]
+    [Min(0f)] [SerializeField] private float battleWeight = 0f;
+    [Tooltip("2~10층에서 랜덤 이벤트 노드가 나올 상대 비율입니다.")]
+    [Min(0f)] [SerializeField] private float randomWeight = 100f;
+    [Tooltip("2~10층에서 상점·여관 노드가 나올 상대 비율입니다.")]
+    [Min(0f)] [SerializeField] private float shopInnWeight = 0f;
+
+    [Header("층별 가로 노드 개수 비율")]
+    [Tooltip("한 층에 노드 1개가 생성될 상대 비율입니다.")]
+    [Min(0f)] [SerializeField] private float oneNodeWeight = 1f;
+    [Tooltip("한 층에 노드 2개가 생성될 상대 비율입니다.")]
+    [Min(0f)] [SerializeField] private float twoNodeWeight = 1f;
+    [Tooltip("한 층에 노드 3개가 생성될 상대 비율입니다.")]
+    [Min(0f)] [SerializeField] private float threeNodeWeight = 1f;
+    [Tooltip("한 층에 노드 4개가 생성될 상대 비율입니다.")]
+    [Min(0f)] [SerializeField] private float fourNodeWeight = 1f;
 
     private const int MapWidth = 4;
     private const int FloorCount = 12;
@@ -55,10 +71,13 @@ public class ProceduralMapGenerator : MonoBehaviour
         for (int floor = 0; floor < FloorCount; floor++)
         {
             List<int> columns = CreateFloorColumns(random);
+            List<InGameEventNode> previousFloor = floor > 0 ? floors[floor - 1] : null;
+            List<InGameEventType> floorTypes = CreateFloorEventTypes(floor, columns.Count, random, previousFloor);
+            while (floorTypes.Count < columns.Count) floorTypes.Add(InGameEventType.Random);
             List<InGameEventNode> floorNodes = new List<InGameEventNode>();
-            foreach (int x in columns)
+            for (int i = 0; i < columns.Count; i++)
             {
-                floorNodes.Add(GetOrCreateNode(new Vector2Int(x, floor), random));
+                floorNodes.Add(GetOrCreateNode(new Vector2Int(columns[i], floor), floorTypes[i], random));
             }
             floors.Add(floorNodes);
             if (floor > 0) ConnectFloors(floors[floor - 1], floorNodes);
@@ -77,7 +96,7 @@ public class ProceduralMapGenerator : MonoBehaviour
         connectionRenderer?.Render(allNodes);
     }
 
-    private InGameEventNode GetOrCreateNode(Vector2Int position, System.Random random)
+    private InGameEventNode GetOrCreateNode(Vector2Int position, InGameEventType type, System.Random random)
     {
         if (nodesByPosition.TryGetValue(position, out InGameEventNode existing))
         {
@@ -86,10 +105,8 @@ public class ProceduralMapGenerator : MonoBehaviour
 
         InGameEventNode node = Instantiate(nodePrefab, mapContent);
         node.name = $"Event Node ({position.x}, {position.y})";
-        InGameEventType type = SelectEventType(position.y);
-        MonsterData monster = type == InGameEventType.Battle ? SelectMonster(random)
-            : type == InGameEventType.Boss ? SelectBoss(random) : null;
-        node.Configure(position, type, monster);
+        if (type == InGameEventType.Boss) node.ConfigureBoss(position, SelectBoss(random));
+        else node.Configure(position, type, type == InGameEventType.Battle ? SelectMonster(random) : null);
 
         RectTransform rect = node.transform as RectTransform;
         if (rect != null)
@@ -99,36 +116,77 @@ public class ProceduralMapGenerator : MonoBehaviour
             float jitterY = NextFloat(random, -positionJitter.y, positionJitter.y);
             rect.anchoredPosition = new Vector2(
                 centeredX + jitterX,
-                position.y * nodeSpacing.y + jitterY);
+                verticalPadding * 0.5f + position.y * nodeSpacing.y + jitterY);
         }
 
         nodesByPosition.Add(position, node);
         return node;
     }
 
-    private static InGameEventType SelectEventType(int floor)
+    private List<InGameEventType> CreateFloorEventTypes(int floor, int count, System.Random random, List<InGameEventNode> previousFloor)
     {
+        List<InGameEventType> types = new List<InGameEventType>(count);
         if (floor == 0)
         {
-            return InGameEventType.Battle;
+            while (types.Count < count) types.Add(InGameEventType.Battle);
+            return types;
+        }
+        if (floor == 10)
+        {
+            while (types.Count < count) types.Add(InGameEventType.ShopOrInn);
+            return types;
+        }
+        if (floor == 11)
+        {
+            while (types.Count < count) types.Add(InGameEventType.Boss);
+            return types;
         }
 
-        if (floor <= 9) return InGameEventType.Random;
-        if (floor == 10) return InGameEventType.ShopOrInn;
-        return InGameEventType.Boss;
+        while (types.Count < count)
+        {
+            types.Add(SelectWeightedMiddleEvent(random, floor != 9, previousFloor, types.Count));
+        }
+        return types;
+    }
+
+    private InGameEventType SelectWeightedMiddleEvent(System.Random random, bool allowShop, List<InGameEventNode> previousFloor, int choiceIndex)
+    {
+        float battle = AllCanConnect(previousFloor, InGameEventType.Battle) ? Mathf.Max(0f, battleWeight) : 0f;
+        float randomEvent = AllCanConnect(previousFloor, InGameEventType.Random) ? Mathf.Max(0f, randomWeight) : 0f;
+        float shopInn = allowShop && AllCanConnect(previousFloor, InGameEventType.ShopOrInn) ? Mathf.Max(0f, shopInnWeight) : 0f;
+        float total = battle + randomEvent + shopInn;
+        if (total <= 0f)
+        {
+            if (AllCanConnect(previousFloor, InGameEventType.Battle)) return InGameEventType.Battle;
+            if (AllCanConnect(previousFloor, InGameEventType.Random)) return InGameEventType.Random;
+            if (allowShop && AllCanConnect(previousFloor, InGameEventType.ShopOrInn)) return InGameEventType.ShopOrInn;
+            return choiceIndex % 2 == 0 ? InGameEventType.Battle : InGameEventType.Random;
+        }
+
+        double roll = random.NextDouble() * total;
+        if (roll < battle) return InGameEventType.Battle;
+        if (roll < battle + randomEvent) return InGameEventType.Random;
+        return InGameEventType.ShopOrInn;
+    }
+
+    private static bool AllCanConnect(List<InGameEventNode> sources, InGameEventType targetType)
+    {
+        if (sources == null) return true;
+        foreach (InGameEventNode source in sources) if (!source.CanConnectTo(targetType)) return false;
+        return true;
     }
 
     private MonsterData SelectMonster(System.Random random)
     {
-        return monsterPool.Count == 0 ? null : monsterPool[random.Next(0, monsterPool.Count)];
+        return monsterDatabase == null ? null : monsterDatabase.GetRandomRegular(random);
     }
 
-    private MonsterData SelectBoss(System.Random random)
+    private BossData SelectBoss(System.Random random)
     {
-        return bossPool.Count > 0 ? bossPool[random.Next(0, bossPool.Count)] : SelectMonster(random);
+        return monsterDatabase == null ? null : monsterDatabase.GetRandomBoss(random);
     }
 
-    private static List<int> CreateFloorColumns(System.Random random)
+    private List<int> CreateFloorColumns(System.Random random)
     {
         List<int> columns = new List<int> { 0, 1, 2, 3 };
         for (int i = columns.Count - 1; i > 0; i--)
@@ -136,28 +194,60 @@ public class ProceduralMapGenerator : MonoBehaviour
             int swap = random.Next(0, i + 1);
             (columns[i], columns[swap]) = (columns[swap], columns[i]);
         }
-        int nodeCount = random.Next(1, MapWidth + 1);
+        int nodeCount = SelectFloorNodeCount(random);
         columns.RemoveRange(nodeCount, columns.Count - nodeCount);
         columns.Sort();
         return columns;
+    }
+
+    private int SelectFloorNodeCount(System.Random random)
+    {
+        float[] weights =
+        {
+            Mathf.Max(0f, oneNodeWeight), Mathf.Max(0f, twoNodeWeight),
+            Mathf.Max(0f, threeNodeWeight), Mathf.Max(0f, fourNodeWeight)
+        };
+        float total = weights[0] + weights[1] + weights[2] + weights[3];
+        if (total <= 0f) return random.Next(1, MapWidth + 1);
+
+        double roll = random.NextDouble() * total;
+        float cumulative = 0f;
+        for (int i = 0; i < weights.Length; i++)
+        {
+            cumulative += weights[i];
+            if (roll < cumulative) return i + 1;
+        }
+        return MapWidth;
     }
 
     private static void ConnectFloors(List<InGameEventNode> lower, List<InGameEventNode> upper)
     {
         foreach (InGameEventNode from in lower)
         {
-            InGameEventNode nearest = upper[0];
-            foreach (InGameEventNode candidate in upper)
-                if (Mathf.Abs(candidate.GridPosition.x - from.GridPosition.x) < Mathf.Abs(nearest.GridPosition.x - from.GridPosition.x)) nearest = candidate;
-            from.ConnectTo(nearest);
+            InGameEventNode nearest = FindNearestCompatibleTarget(from, upper);
+            if (nearest != null) from.ConnectTo(nearest);
         }
         foreach (InGameEventNode target in upper)
         {
-            InGameEventNode nearest = lower[0];
-            foreach (InGameEventNode candidate in lower)
-                if (Mathf.Abs(candidate.GridPosition.x - target.GridPosition.x) < Mathf.Abs(nearest.GridPosition.x - target.GridPosition.x)) nearest = candidate;
-            nearest.ConnectTo(target);
+            InGameEventNode nearest = FindNearestCompatibleSource(lower, target);
+            if (nearest != null) nearest.ConnectTo(target);
         }
+    }
+
+    private static InGameEventNode FindNearestCompatibleTarget(InGameEventNode source, List<InGameEventNode> targets)
+    {
+        InGameEventNode nearest = null;
+        foreach (InGameEventNode target in targets)
+            if (source.CanConnectTo(target.EventType) && (nearest == null || Mathf.Abs(target.GridPosition.x - source.GridPosition.x) < Mathf.Abs(nearest.GridPosition.x - source.GridPosition.x))) nearest = target;
+        return nearest;
+    }
+
+    private static InGameEventNode FindNearestCompatibleSource(List<InGameEventNode> sources, InGameEventNode target)
+    {
+        InGameEventNode nearest = null;
+        foreach (InGameEventNode source in sources)
+            if (source.CanConnectTo(target.EventType) && (nearest == null || Mathf.Abs(source.GridPosition.x - target.GridPosition.x) < Mathf.Abs(nearest.GridPosition.x - target.GridPosition.x))) nearest = source;
+        return nearest;
     }
 
     private static float NextFloat(System.Random random, float min, float max)

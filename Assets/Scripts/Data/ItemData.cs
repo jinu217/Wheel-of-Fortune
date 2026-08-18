@@ -30,5 +30,12 @@ public enum ItemEffectType
     AttackBuff,
     DefenseBuff,
     AttackRouletteCoin,
-    DefenseRouletteCoin
+    DefenseRouletteCoin,
+    DodgeNextAttack,
+    DamageEnemy,
+    DelayEnemyTurn,
+    Barrier,
+    Mushroom,
+    FateCoin,
+    DoubleBattleGold
 }

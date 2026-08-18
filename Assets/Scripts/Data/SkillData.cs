@@ -38,7 +38,19 @@ public enum SkillEffectType
     Damage,
     Heal,
     AttackBuff,
-    DefenseBuff
+    DefenseBuff,
+    ReducePlayerNextAttack,
+    VanishAndDeleteAbility,
+    MonsterAttackUp3,
+    MonsterAttackUp2DefenseDown1,
+    HeavyAttackAndStealGold,
+    PunishPlayerFailure,
+    RepeatPreviousActionTwice,
+    Barrier5AndAttack5,
+    RestOneTurn,
+    ChargeBarrier5,
+    ChargeOverload,
+    RandomAttackDefenseUp
 }
 
 [CreateAssetMenu(fileName = "Skill Data", menuName = "Game Data/Skill Data")]

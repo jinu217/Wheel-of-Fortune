@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c3f0056152c3ae04e8c02736d8bc60bb, type: 3}
   m_Name: Blue Great Success
   m_EditorClassIdentifier: Assembly-CSharp::RouletteEffectData
-  color: {r: 0, g: 0, b: 1, a: 1}
+  rouletteImage: {fileID: -3795030737594126942, guid: 10d44857e9e1ebd439edfecc7a2a6540, type: 3}
   effect: 1
   statRange: {x: 2, y: 5}

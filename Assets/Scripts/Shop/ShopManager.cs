@@ -8,14 +8,24 @@ public class ShopManager : MonoBehaviour
     [SerializeField] private PlayerStatManager playerStats;
     [Tooltip("구매한 아이템을 추가할 플레이어 인벤토리입니다.")]
     [SerializeField] private PlayerInventoryManager inventory;
-    [Tooltip("상점에서 무작위로 추첨할 전체 ItemData 목록입니다.")]
-    [SerializeField] private List<ItemData> products = new List<ItemData>();
+    [Tooltip("상점에서 사용할 모든 아이템이 등록된 데이터베이스입니다.")]
+    [SerializeField] private ItemDatabase itemDatabase;
     private readonly HashSet<int> soldProductIndexes = new HashSet<int>();
     private readonly List<int> displayedProductIndexes = new List<int>();
 
-    public IReadOnlyList<ItemData> Products => products;
+    public ItemDatabase Database => itemDatabase;
+    public IReadOnlyList<ItemData> Products => itemDatabase == null ? System.Array.Empty<ItemData>() : itemDatabase.Items;
     public IReadOnlyList<int> DisplayedProductIndexes => displayedProductIndexes;
+    public int CurrentGold => playerStats == null ? 0 : playerStats.Coin;
     public event Action<ItemData> ItemPurchased;
+
+    public int GetPrice(ItemData item)
+    {
+        if (item == null) return 0;
+        PlayerAbilityManager abilities = GameSessionManager.Instance == null ? null : GameSessionManager.Instance.PlayerAbilities;
+        return abilities != null && abilities.Has(PassiveAbilityType.ShopDiscount20)
+            ? Mathf.CeilToInt(item.Price * 0.8f) : item.Price;
+    }
 
     public void SetPlayerData(PlayerStatManager stats, PlayerInventoryManager playerInventory)
     {
@@ -25,6 +35,7 @@ public class ShopManager : MonoBehaviour
 
     public bool TryBuy(int productIndex)
     {
+        IReadOnlyList<ItemData> products = Products;
         if (productIndex < 0 || productIndex >= products.Count || inventory == null || playerStats == null
             || soldProductIndexes.Contains(productIndex) || !displayedProductIndexes.Contains(productIndex))
         {
@@ -32,14 +43,15 @@ public class ShopManager : MonoBehaviour
         }
 
         ItemData item = products[productIndex];
-        if (item == null || inventory.IsFull || !playerStats.TrySpendCoins(item.Price))
+        int price = GetPrice(item);
+        if (item == null || inventory.IsFull || !playerStats.TrySpendCoins(price))
         {
             return false;
         }
 
         if (!inventory.TryAddItem(item))
         {
-            playerStats.AddCoins(item.Price);
+            playerStats.AddCoins(price);
             return false;
         }
 
@@ -58,6 +70,13 @@ public class ShopManager : MonoBehaviour
         soldProductIndexes.Clear();
         displayedProductIndexes.Clear();
 
+        if (itemDatabase == null)
+        {
+            Debug.LogError("ShopManager에 Assets/Data/Items/ItemDatabase.asset을 연결해야 합니다.", this);
+            return;
+        }
+
+        IReadOnlyList<ItemData> products = Products;
         List<int> candidates = new List<int>();
         for (int i = 0; i < products.Count; i++)
         {

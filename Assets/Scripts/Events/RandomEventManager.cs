@@ -29,24 +29,27 @@ public class RandomEventManager : MonoBehaviour
 {
     [Tooltip("랜덤 이벤트 효과를 적용할 플레이어입니다.")] [SerializeField] private PlayerStatManager playerStats;
     [Tooltip("가시 덤불 아이템을 추가할 인벤토리입니다.")] [SerializeField] private PlayerInventoryManager inventory;
-    [Tooltip("보물상자에서 등장할 미믹 몬스터 데이터입니다.")] [SerializeField] private MonsterData mimicMonster;
-    [Tooltip("가시 덤불에서 무작위로 얻을 수 있는 아이템 목록입니다.")] [SerializeField] private List<ItemData> randomItems = new List<ItemData>();
+    [Tooltip("보물상자 미믹을 포함한 전체 몬스터 데이터베이스입니다.")]
+    [SerializeField] private MonsterDatabase monsterDatabase;
+    [Tooltip("가시 덤불에서 아이템을 추첨할 전체 아이템 데이터베이스입니다.")] [SerializeField] private ItemDatabase itemDatabase;
     [Tooltip("주술사와 인과율의 신전에서 얻을 수 있는 능력 목록입니다.")] [SerializeField] private List<RandomAbility> randomAbilities = new List<RandomAbility>();
 
     [Header("Treasure Chest")]
-    [Tooltip("보물상자에서 얻는 골드의 최소값(X)과 최대값(Y)입니다.")] [SerializeField] private Vector2Int treasureGoldRange = new Vector2Int(10, 30);
+    [Tooltip("보물상자에서 미믹이 나오지 않았을 때 얻는 골드입니다.")] [Min(0)] [SerializeField] private int treasureGold = 50;
     [Tooltip("보물상자 대신 미믹이 등장할 확률입니다. 0.25는 25%입니다.")] [Range(0f, 1f)] [SerializeField] private float mimicChance = 0.25f;
 
     [Header("Shaman")]
     [Tooltip("주술사에게 능력을 받을 때 지불할 골드입니다.")] [Min(0)] [SerializeField] private int shamanPrice = 20;
 
     [Header("Thorn Bush")]
-    [Tooltip("가시 덤불 진입 시 플레이어가 받는 피해입니다.")] [Min(0)] [SerializeField] private int thornDamage = 10;
+    [Tooltip("가시 덤불 진입 시 플레이어가 받는 피해입니다.")] [Min(0)] [SerializeField] private int thornDamage = 5;
 
     public event Action<RandomEventType> RandomEventCompleted;
     public event Action<RandomEventType> RandomEventSelected;
     public event Action<MonsterData> MimicEncountered;
     public event Action CausalityChanceTriggered;
+
+    private ItemDatabase Database => itemDatabase;
 
     public RandomEventType SelectRandomEvent()
     {
@@ -64,15 +67,14 @@ public class RandomEventManager : MonoBehaviour
 
     public void OpenTreasureChest()
     {
+        MonsterData mimicMonster = monsterDatabase == null ? null : monsterDatabase.MimicMonster;
         if (UnityEngine.Random.value < mimicChance && mimicMonster != null)
         {
             MimicEncountered?.Invoke(mimicMonster);
             return;
         }
 
-        int min = Mathf.Min(treasureGoldRange.x, treasureGoldRange.y);
-        int max = Mathf.Max(treasureGoldRange.x, treasureGoldRange.y);
-        playerStats.AddCoins(UnityEngine.Random.Range(min, max + 1));
+        playerStats.AddCoins(treasureGold);
         RandomEventCompleted?.Invoke(RandomEventType.TreasureChest);
     }
 
@@ -104,6 +106,11 @@ public class RandomEventManager : MonoBehaviour
         RandomEventCompleted?.Invoke(RandomEventType.CausalityShrine);
     }
 
+    public void CompleteCausalityShrine()
+    {
+        RandomEventCompleted?.Invoke(RandomEventType.CausalityShrine);
+    }
+
     public void UseLifeSpring()
     {
         playerStats.RestoreFullHp();
@@ -112,20 +119,14 @@ public class RandomEventManager : MonoBehaviour
 
     public bool EnterThornBush()
     {
-        if (inventory == null || inventory.IsFull || randomItems.Count == 0)
-        {
-            return false;
-        }
-
         playerStats.TakeDamage(thornDamage);
-        ItemData item = randomItems[UnityEngine.Random.Range(0, randomItems.Count)];
-        bool added = inventory.TryAddItem(item);
-
-        if (added)
+        bool added = false;
+        if (inventory != null && !inventory.IsFull && Database != null && Database.Count > 0)
         {
-            RandomEventCompleted?.Invoke(RandomEventType.ThornBush);
+            ItemData item = Database.GetRandomItem();
+            added = inventory.TryAddItem(item);
         }
-
+        RandomEventCompleted?.Invoke(RandomEventType.ThornBush);
         return added;
     }
 

@@ -29,18 +29,22 @@ public class BattleManager : MonoBehaviour
     [SerializeField] private RouletteController roulette;
     [Tooltip("현재 몬스터의 능력치와 행동을 처리할 컴포넌트입니다.")]
     [SerializeField] private MonsterController monster;
-    [Tooltip("흰색 버프와 검은색 디버프가 유지되는 기본 턴 수입니다.")]
-    [Min(1)] [SerializeField] private int buffDurationTurns = 3;
-    [Tooltip("몬스터 행동 이미지를 화면에 보여주는 시간입니다.")]
-    [Min(0f)] [SerializeField] private float monsterActionDisplaySeconds = 1f;
+    [Tooltip("몬스터 턴이 시작된 뒤 예고된 행동을 실행하기까지 기다리는 시간입니다.")]
+    [Min(0f)] [SerializeField] private float monsterActionDisplaySeconds = 3f;
 
     private bool isResolvingRoulette;
     private readonly List<PendingRouletteResult> pendingRouletteResults = new List<PendingRouletteResult>();
+    private int skippedMonsterTurns;
+    private int battleGoldMultiplier = 1;
+    private PlayerAbilityManager abilities;
+    private int rouletteSpinsThisTurn;
+    private bool firstAttackRouletteResolved;
 
     public BattleTurn CurrentTurn { get; private set; } = BattleTurn.None;
     public bool IsBattleActive => CurrentTurn != BattleTurn.None;
     public PlayerStatManager PlayerStats => playerStats;
     public MonsterController Monster => monster;
+    public bool SuppressPostBattleRewards { get; private set; }
     public bool CanSpinAttackRoulette => CurrentTurn == BattleTurn.Player
         && !isResolvingRoulette
         && playerStats != null
@@ -71,6 +75,14 @@ public class BattleManager : MonoBehaviour
         }
 
         monster.Initialize(monsterData);
+        abilities = GameSessionManager.Instance == null ? null : GameSessionManager.Instance.PlayerAbilities;
+        playerStats.DamageTaken -= HandlePlayerDamageTaken;
+        playerStats.DamageTaken += HandlePlayerDamageTaken;
+        playerStats.ResetBattleState();
+        skippedMonsterTurns = 0;
+        battleGoldMultiplier = 1;
+        firstAttackRouletteResolved = false;
+        SuppressPostBattleRewards = false;
         BeginPlayerTurn();
     }
 
@@ -164,6 +176,32 @@ public class BattleManager : MonoBehaviour
     {
         isResolvingRoulette = false;
         pendingRouletteResults.Add(new PendingRouletteResult(actionType, result));
+        rouletteSpinsThisTurn++;
+
+        if (abilities != null && result.EffectData != null)
+        {
+            RouletteEffectType effect = result.EffectData.Effect;
+            bool badColor = effect == RouletteEffectType.Failure || effect == RouletteEffectType.SelfDebuff;
+            if (effect != RouletteEffectType.Success && abilities.Has(PassiveAbilityType.NonGreenHeal2)) playerStats.Heal(2);
+            if (badColor && abilities.Has(PassiveAbilityType.BadColorBarrier2)) playerStats.AddBarrier(2);
+            if (badColor && abilities.Has(PassiveAbilityType.BadColorPermanentAttack1)) playerStats.AddPermanentStat(StatType.Attack, 1);
+            if (actionType == RouletteActionType.Attack && !firstAttackRouletteResolved)
+            {
+                firstAttackRouletteResolved = true;
+                if (effect == RouletteEffectType.Failure && abilities.Has(PassiveAbilityType.FirstAttackFailureAttack5))
+                    playerStats.AddBattleStatModifier(5, 0);
+            }
+        }
+
+        if (result.EffectData != null)
+        {
+            monster.HandlePlayerRouletteResult(actionType, result.EffectData.Effect, playerStats);
+            if (playerStats.IsDead)
+            {
+                FinishBattle(false);
+                return;
+            }
+        }
 
         // 추가 회전은 턴 종료 조건에 영향을 주므로 코인 반환만 즉시 처리합니다.
         if (result.EffectData != null && result.EffectData.Effect == RouletteEffectType.ExtraSpin)
@@ -188,10 +226,15 @@ public class BattleManager : MonoBehaviour
 
         pendingRouletteResults.Clear();
 
+        if (abilities != null)
+        {
+            if (playerStats.Barrier <= 0 && abilities.Has(PassiveAbilityType.NoBarrierEndTurn5)) playerStats.AddBarrier(5);
+            if (abilities.Has(PassiveAbilityType.SpinCountBarrier)) playerStats.AddBarrier(rouletteSpinsThisTurn * 2);
+        }
+
         if (monster.IsDead)
         {
-            playerStats.AddCoins(monster.Data.Coin);
-            FinishBattle(true);
+            CompleteVictory();
             return;
         }
 
@@ -201,6 +244,7 @@ public class BattleManager : MonoBehaviour
     private void BeginPlayerTurn()
     {
         pendingRouletteResults.Clear();
+        rouletteSpinsThisTurn = 0;
         playerStats.ResetBattleRouletteCoins();
         CurrentTurn = BattleTurn.Player;
         TurnChanged?.Invoke(CurrentTurn);
@@ -211,13 +255,23 @@ public class BattleManager : MonoBehaviour
         CurrentTurn = BattleTurn.Monster;
         TurnChanged?.Invoke(CurrentTurn);
 
-        MonsterActionType action = monster.ExecuteTurn(playerStats);
-        MonsterTurnResolved?.Invoke(action);
-
+        // 다음 행동 이미지를 보여준 상태로 기다린 뒤 실제 행동을 적용합니다.
         if (monsterActionDisplaySeconds > 0f)
         {
             yield return new WaitForSeconds(monsterActionDisplaySeconds);
         }
+
+        if (skippedMonsterTurns > 0)
+        {
+            skippedMonsterTurns--;
+            ApplyMonsterTurnEndAbilities();
+            playerStats.AdvanceBuffTurn();
+            BeginPlayerTurn();
+            yield break;
+        }
+
+        MonsterActionType action = monster.ExecuteTurn(playerStats, this);
+        MonsterTurnResolved?.Invoke(action);
 
         if (playerStats.IsDead)
         {
@@ -225,8 +279,24 @@ public class BattleManager : MonoBehaviour
             yield break;
         }
 
+        if (monster.IsDead)
+        {
+            CompleteVictory();
+            yield break;
+        }
+
+        ApplyMonsterTurnEndAbilities();
         playerStats.AdvanceBuffTurn();
         BeginPlayerTurn();
+    }
+
+    private void ApplyMonsterTurnEndAbilities()
+    {
+        if (abilities != null && playerStats.Barrier > 0
+            && abilities.Has(PassiveAbilityType.MonsterEndBarrierHeal5))
+        {
+            playerStats.Heal(5);
+        }
     }
 
     private void ApplyBattleRouletteEffect(
@@ -243,34 +313,28 @@ public class BattleManager : MonoBehaviour
         switch (result.EffectData.Effect)
         {
             case RouletteEffectType.Success:
-                ApplySuccess(actionType, value, 1);
+                ApplySuccess(actionType, 1f);
                 break;
             case RouletteEffectType.GreatSuccess:
-                ApplySuccess(actionType, value, 2);
+                ApplySuccess(actionType, 1.5f);
                 break;
             case RouletteEffectType.ExtraSpin:
-                ApplySuccess(actionType, value, 1);
+                ApplySuccess(actionType, 1f);
                 if (refundExtraSpin)
                 {
                     RefundRouletteCoin(actionType);
                 }
                 break;
             case RouletteEffectType.SelfBuff:
-                playerStats.AddTimedModifier(
-                    actionType == RouletteActionType.Attack ? StatType.Attack : StatType.Defense,
-                    value,
-                    buffDurationTurns);
+                playerStats.AddBattleStatModifier(1, 1);
                 break;
             case RouletteEffectType.Heal:
-                playerStats.Heal(value);
+                playerStats.Heal(10);
                 break;
             case RouletteEffectType.Failure:
                 break;
             case RouletteEffectType.SelfDebuff:
-                playerStats.AddTimedModifier(
-                    actionType == RouletteActionType.Attack ? StatType.Attack : StatType.Defense,
-                    -value,
-                    buffDurationTurns);
+                playerStats.AddBattleStatModifier(-1, -1);
                 break;
             case RouletteEffectType.Special:
                 SpecialRouletteTriggered?.Invoke(actionType, result);
@@ -278,16 +342,37 @@ public class BattleManager : MonoBehaviour
         }
     }
 
-    private void ApplySuccess(RouletteActionType actionType, int value, int multiplier)
+    private void ApplySuccess(RouletteActionType actionType, float multiplier)
     {
         if (actionType == RouletteActionType.Attack)
         {
-            monster.TakeDamage(playerStats.Attack * multiplier + value);
+            if (abilities != null && monster.Barrier > 0 && abilities.Has(PassiveAbilityType.AttackBarrierMultiplier)) multiplier *= 1.5f;
+            monster.TakeDamage(Mathf.CeilToInt(playerStats.Attack * multiplier));
         }
         else
         {
-            playerStats.AddBarrier(value * multiplier);
+            playerStats.AddBarrier(Mathf.CeilToInt(playerStats.Defense * multiplier));
         }
+    }
+
+    public void DamageMonsterWithItem(int damage)
+    {
+        if (IsBattleActive) monster.TakeDirectDamage(damage);
+    }
+
+    public void DelayMonsterOneTurn()
+    {
+        if (IsBattleActive) skippedMonsterTurns++;
+    }
+
+    public void DoubleBattleGold()
+    {
+        if (IsBattleActive) battleGoldMultiplier = 2;
+    }
+
+    public bool UseFateCoin()
+    {
+        return CurrentTurn == BattleTurn.Player && !roulette.IsSpinning && roulette.ConfigureFateCoinSpin();
     }
 
     private void RefundRouletteCoin(RouletteActionType actionType)
@@ -304,9 +389,35 @@ public class BattleManager : MonoBehaviour
 
     private void FinishBattle(bool playerWon)
     {
+        if (playerWon && !SuppressPostBattleRewards && abilities != null)
+        {
+            if (abilities.Has(PassiveAbilityType.BattleEndHeal3)) playerStats.Heal(3);
+            if (abilities.Has(PassiveAbilityType.BattleEndHeal5)) playerStats.Heal(5);
+            if (abilities.Has(PassiveAbilityType.BattleEndHeal10)) playerStats.Heal(10);
+            if (abilities.Has(PassiveAbilityType.BattleEndGold5)) playerStats.AddCoins(5);
+        }
         pendingRouletteResults.Clear();
         CurrentTurn = BattleTurn.None;
         TurnChanged?.Invoke(CurrentTurn);
         BattleFinished?.Invoke(playerWon);
+    }
+
+    private void CompleteVictory()
+    {
+        SuppressPostBattleRewards = monster != null && monster.SuppressVictoryRewards;
+        if (!SuppressPostBattleRewards)
+            playerStats.AddCoins(monster.Data.Coin * battleGoldMultiplier);
+        FinishBattle(true);
+    }
+
+    private void HandlePlayerDamageTaken(int damage)
+    {
+        if (damage > 0 && abilities != null && abilities.Has(PassiveAbilityType.Retaliate3) && monster != null && !monster.IsDead)
+            monster.TakeDirectDamage(3);
+    }
+
+    private void OnDestroy()
+    {
+        if (playerStats != null) playerStats.DamageTaken -= HandlePlayerDamageTaken;
     }
 }

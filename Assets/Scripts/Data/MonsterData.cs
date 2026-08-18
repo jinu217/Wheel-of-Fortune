@@ -52,10 +52,6 @@ public class MonsterData : ScriptableObject
     [Tooltip("몬스터가 사용할 첫 번째 스킬입니다.")]
     [SerializeField] private string skill1Id;
 
-    [Min(0)]
-    [Tooltip("첫 번째 스킬을 다시 사용할 수 있을 때까지 필요한 턴입니다.")]
-    [SerializeField] private int skill1Turn;
-
     [Tooltip("첫 번째 스킬 사용 시 표시할 행동 이미지입니다.")]
     [SerializeField] private Sprite skill1Image;
 
@@ -65,12 +61,20 @@ public class MonsterData : ScriptableObject
     [Tooltip("몬스터가 사용할 두 번째 스킬입니다.")]
     [SerializeField] private string skill2Id;
 
-    [Min(0)]
-    [Tooltip("두 번째 스킬을 다시 사용할 수 있을 때까지 필요한 턴입니다.")]
-    [SerializeField] private int skill2Turn;
-
     [Tooltip("두 번째 스킬 사용 시 표시할 행동 이미지입니다.")]
     [SerializeField] private Sprite skill2Image;
+
+    [Header("Action Pattern")]
+    [Tooltip("몬스터가 첫 번째로 실행할 행동입니다. 공격, 방어, 스킬1, 스킬2 중에서 선택합니다.")]
+    [SerializeField] private MonsterActionType actionPattern1 = MonsterActionType.Attack;
+    [Tooltip("몬스터가 두 번째로 실행할 행동입니다. 공격, 방어, 스킬1, 스킬2 중에서 선택합니다.")]
+    [SerializeField] private MonsterActionType actionPattern2 = MonsterActionType.Attack;
+    [Tooltip("몬스터가 세 번째로 실행할 행동입니다. 공격, 방어, 스킬1, 스킬2 중에서 선택합니다.")]
+    [SerializeField] private MonsterActionType actionPattern3 = MonsterActionType.Attack;
+    [Tooltip("몬스터가 네 번째로 실행할 행동입니다. None이면 1~3번 행동만 반복합니다.")]
+    [SerializeField] private MonsterActionType actionPattern4 = MonsterActionType.None;
+    [Tooltip("몬스터가 다섯 번째로 실행할 행동입니다. None이면 1~4번 행동만 반복합니다.")]
+    [SerializeField] private MonsterActionType actionPattern5 = MonsterActionType.None;
 
     public Sprite MonsterImage => monsterImage;
     public int Hp => hp;
@@ -81,9 +85,21 @@ public class MonsterData : ScriptableObject
     public Sprite DefImage => defImage;
     public SkillData SkillData => skillData;
     public SkillInfo Skill1 => skillData == null ? null : skillData.GetSkill(skill1Id);
-    public int Skill1Turn => skill1Turn;
     public Sprite Skill1Image => skill1Image;
     public SkillInfo Skill2 => skillData == null ? null : skillData.GetSkill(skill2Id);
-    public int Skill2Turn => skill2Turn;
     public Sprite Skill2Image => skill2Image;
+    public int ActionPatternCount => actionPattern4 == MonsterActionType.None ? 3
+        : actionPattern5 == MonsterActionType.None ? 4 : 5;
+
+    public MonsterActionType GetActionPattern(int index)
+    {
+        switch (Mathf.Abs(index) % ActionPatternCount)
+        {
+            case 0: return actionPattern1;
+            case 1: return actionPattern2;
+            case 2: return actionPattern3;
+            case 3: return actionPattern4;
+            default: return actionPattern5;
+        }
+    }
 }

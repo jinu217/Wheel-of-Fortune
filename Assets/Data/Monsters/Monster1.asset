@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b2f2fb5ca2b9a24ea9d775006c20fb6, type: 3}
+  m_Name: Monster1
+  m_EditorClassIdentifier: Assembly-CSharp::MonsterData
+  monsterName: "\uBC29\uB791\uD558\uB294 \uC218\uB808\uAFBC"
+  monsterImage: {fileID: -2138498162475909359, guid: 80d0c41b78620ff4bab3ea0ebdec4e12, type: 3}
+  hp: 20
+  atk: 2
+  def: 3
+  coin: 11
+  atkImage: {fileID: 0}
+  defImage: {fileID: 0}
+  skillData: {fileID: 11400000, guid: 98b583081de64aaa890421960e97db98, type: 2}
+  skill1Id: 
+  skill1Image: {fileID: 0}
+  skill2Id: 
+  skill2Image: {fileID: 0}
+  actionPattern1: 0
+  actionPattern2: 1
+  actionPattern3: 1
+  actionPattern4: 4
+  actionPattern5: 4

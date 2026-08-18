@@ -1,104 +1,132 @@
 using System;
-using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-
-[Serializable]
-public class PermanentStatRewardOption
-{
-    [Tooltip("보상 선택지에 표시할 이름입니다.")] public string rewardName = "능력치 상승";
-    [Tooltip("보상 선택지에 표시할 이미지입니다.")] public Sprite rewardImage;
-    [Tooltip("영구적으로 상승시킬 능력치입니다.")] public StatType statType = StatType.Attack;
-    [Tooltip("선택한 능력치에 영구적으로 더할 수치입니다.")] public int amount = 1;
-}
 
 public class BattleRewardSelectionUI : MonoBehaviour
 {
     private const int ChoiceCount = 3;
 
-    [Header("Reward Data")]
-    [Tooltip("전투 승리 시 무작위로 추첨할 전체 영구 능력치 보상 목록입니다.")]
-    [SerializeField] private List<PermanentStatRewardOption> rewardOptions = new List<PermanentStatRewardOption>();
     [Header("Reward Panel")]
     [Tooltip("전투 종료 후 활성화할 능력치 선택 패널입니다. 비어 있으면 자동 생성합니다.")]
     [SerializeField] private GameObject rewardPanel;
-    [Tooltip("클릭 가능한 선택지 배경 Image 3개입니다. 각 이미지 안에 보상 텍스트가 표시됩니다.")]
+    [Tooltip("클릭해서 능력을 선택할 배경 Image 3개입니다.")]
     [SerializeField] private Image[] rewardImages = new Image[ChoiceCount];
-    [Tooltip("추첨된 선택지 이름과 상승 수치를 표시할 텍스트 3개입니다.")]
+    [Tooltip("추첨된 능력의 설명만 표시할 텍스트 3개입니다.")]
     [SerializeField] private TMP_Text[] rewardTexts = new TMP_Text[ChoiceCount];
-    [Tooltip("보상 UI에 사용할 폰트입니다. 비어 있으면 현재 전투 UI의 폰트를 사용합니다.")]
-    [SerializeField] private TMP_FontAsset rewardFont;
 
-    private readonly PermanentStatRewardOption[] displayedRewards = new PermanentStatRewardOption[ChoiceCount];
+    private TMP_FontAsset rewardFont;
+
+    private readonly AbilityDefinition[] displayedRewards = new AbilityDefinition[ChoiceCount];
     private readonly Button[] rewardButtons = new Button[ChoiceCount];
-    private PlayerStatManager playerStats;
+    private PlayerAbilityManager abilityManager;
     private Action rewardSelected;
     private bool selectionCompleted;
 
-    public void Show(PlayerStatManager stats, Action onRewardSelected)
+    public void Show(PlayerStatManager stats, Action onRewardSelected, bool allowSelection = true)
     {
-        playerStats = stats;
+        abilityManager = GameSessionManager.Instance == null
+            ? stats == null ? null : stats.GetComponentInParent<PlayerAbilityManager>()
+            : GameSessionManager.Instance.PlayerAbilities;
         rewardSelected = onRewardSelected;
         selectionCompleted = false;
-        EnsureDefaultRewards();
         EnsureRewardPanel();
         DrawThreeRewards();
+        SetSelectionEnabled(allowSelection);
         rewardPanel.SetActive(true);
         rewardPanel.transform.SetAsLastSibling();
     }
 
-    private void EnsureDefaultRewards()
+    public void SetSelectionEnabled(bool enabled)
     {
-        int validRewardCount = rewardOptions.FindAll(option => option != null).Count;
-        if (validRewardCount >= ChoiceCount) return;
-        rewardOptions.Clear();
-        rewardOptions.Add(CreateDefaultReward("최대 HP 증가", StatType.MaxHp, 10));
-        rewardOptions.Add(CreateDefaultReward("공격력 증가", StatType.Attack, 2));
-        rewardOptions.Add(CreateDefaultReward("방어력 증가", StatType.Defense, 2));
-        rewardOptions.Add(CreateDefaultReward("최대 HP 크게 증가", StatType.MaxHp, 15));
-        rewardOptions.Add(CreateDefaultReward("공격력 크게 증가", StatType.Attack, 3));
-        rewardOptions.Add(CreateDefaultReward("방어력 크게 증가", StatType.Defense, 3));
-    }
-
-    private static PermanentStatRewardOption CreateDefaultReward(string rewardName, StatType statType, int amount)
-    {
-        return new PermanentStatRewardOption { rewardName = rewardName, statType = statType, amount = amount };
+        for (int i = 0; i < rewardButtons.Length; i++)
+        {
+            if (rewardButtons[i] != null)
+                rewardButtons[i].interactable = enabled && displayedRewards[i] != null;
+        }
     }
 
     private void DrawThreeRewards()
     {
-        List<PermanentStatRewardOption> candidates = rewardOptions.FindAll(option => option != null);
+        if (abilityManager == null) return;
+        int floor = GameSessionManager.Instance == null ? 1 : GameSessionManager.Instance.CurrentEventPosition.y + 1;
+        System.Collections.Generic.List<AbilityDefinition> candidates = abilityManager.GenerateChoices(floor, ChoiceCount);
         for (int i = 0; i < ChoiceCount; i++)
         {
-            int randomIndex = UnityEngine.Random.Range(0, candidates.Count);
-            PermanentStatRewardOption option = candidates[randomIndex];
-            candidates.RemoveAt(randomIndex);
+            if (i >= candidates.Count)
+            {
+                displayedRewards[i] = null;
+                rewardTexts[i].text = "획득 가능한 능력 없음";
+                rewardButtons[i].interactable = false;
+                rewardImages[i].gameObject.SetActive(false);
+                continue;
+            }
+            AbilityDefinition option = candidates[i];
             displayedRewards[i] = option;
-            rewardImages[i].sprite = option.rewardImage;
-            rewardImages[i].preserveAspect = true;
-            rewardImages[i].color = option.rewardImage == null ? new Color(0.35f, 0.37f, 0.43f, 1f) : Color.white;
-            rewardTexts[i].text = $"{option.rewardName}\n{GetStatName(option.statType)} +{option.amount}";
+            rewardImages[i].gameObject.SetActive(true);
+            rewardImages[i].sprite = null;
+            rewardImages[i].color = option.Grade == AbilityGrade.Small ? new Color(0.32f, 0.36f, 0.42f, 1f)
+                : option.Grade == AbilityGrade.Moderate ? new Color(0.20f, 0.42f, 0.62f, 1f)
+                : new Color(0.72f, 0.52f, 0.10f, 1f);
+            rewardTexts[i].text = option.Description;
             rewardButtons[i].interactable = true;
         }
     }
 
     private void SelectReward(int choiceIndex)
     {
-        if (selectionCompleted || playerStats == null || choiceIndex < 0 || choiceIndex >= ChoiceCount) return;
-        PermanentStatRewardOption selected = displayedRewards[choiceIndex];
+        if (selectionCompleted || abilityManager == null || choiceIndex < 0 || choiceIndex >= ChoiceCount) return;
+        AbilityDefinition selected = displayedRewards[choiceIndex];
         if (selected == null) return;
         selectionCompleted = true;
         foreach (Button button in rewardButtons) button.interactable = false;
-        playerStats.AddPermanentStat(selected.statType, selected.amount);
+        abilityManager.Acquire(selected);
         rewardPanel.SetActive(false);
         rewardSelected?.Invoke();
     }
 
     private void EnsureRewardPanel()
     {
-        if (HasCompleteInspectorUI()) BindButtons();
+        if (HasCompleteInspectorUI())
+        {
+            ApplyRewardFont();
+            BindButtons();
+        }
         else BuildRewardPanel();
+    }
+
+    private void ApplyRewardFont()
+    {
+        rewardFont = FindNeodgmFont();
+        if (rewardFont == null || rewardTexts == null) return;
+
+        foreach (TMP_Text rewardText in rewardTexts)
+        {
+            if (rewardText != null) rewardText.font = rewardFont;
+        }
+    }
+
+    private TMP_FontAsset FindNeodgmFont()
+    {
+        if (rewardTexts != null)
+        {
+            foreach (TMP_Text rewardText in rewardTexts)
+            {
+                if (rewardText != null && rewardText.font != null
+                    && rewardText.font.name.IndexOf("neodgm", StringComparison.OrdinalIgnoreCase) >= 0)
+                    return rewardText.font;
+            }
+        }
+
+        TMP_Text[] sceneTexts = FindObjectsByType<TMP_Text>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        foreach (TMP_Text sceneText in sceneTexts)
+        {
+            if (sceneText.font != null
+                && sceneText.font.name.IndexOf("neodgm", StringComparison.OrdinalIgnoreCase) >= 0)
+                return sceneText.font;
+        }
+
+        return null;
     }
 
     private bool HasCompleteInspectorUI()
@@ -135,16 +163,12 @@ public class BattleRewardSelectionUI : MonoBehaviour
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920f, 1080f);
         }
-        if (rewardFont == null)
-        {
-            TMP_Text sceneText = FindFirstObjectByType<TMP_Text>(FindObjectsInactive.Include);
-            rewardFont = sceneText == null ? null : sceneText.font;
-        }
+        rewardFont = FindNeodgmFont();
 
         rewardPanel = CreateUIObject("Permanent Stat Reward Panel", canvas.transform, typeof(Image));
         StretchToParent(rewardPanel.GetComponent<RectTransform>());
         rewardPanel.GetComponent<Image>().color = new Color(0.04f, 0.04f, 0.06f, 0.96f);
-        CreateText("Reward Title", rewardPanel.transform, "전투 승리!\n영구 능력치 하나를 선택하세요", 42f,
+        CreateText("Reward Title", rewardPanel.transform, "전투 승리!\n영구 능력 하나를 선택하세요", 42f,
             new Vector2(0f, 290f), new Vector2(1000f, 150f));
 
         rewardImages = new Image[ChoiceCount];
@@ -165,17 +189,6 @@ public class BattleRewardSelectionUI : MonoBehaviour
         }
         BindButtons();
         rewardPanel.SetActive(false);
-    }
-
-    private static string GetStatName(StatType statType)
-    {
-        switch (statType)
-        {
-            case StatType.MaxHp: return "최대 HP";
-            case StatType.Attack: return "공격력";
-            case StatType.Defense: return "방어력";
-            default: return statType.ToString();
-        }
     }
 
     private TMP_Text CreateText(string name, Transform parent, string content, float size, Vector2 position, Vector2 dimensions)
