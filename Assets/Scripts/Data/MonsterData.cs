@@ -14,6 +14,9 @@ public class SkillDropdownAttribute : PropertyAttribute
 public class MonsterData : ScriptableObject
 {
     [Header("Monster Info")]
+    [Tooltip("몬스터의 이름입니다.")]
+    [SerializeField] private string monsterName;
+    
     [Tooltip("전투 화면에 표시할 몬스터 이미지입니다.")]
     [SerializeField] private Sprite monsterImage;
 
