@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c3f0056152c3ae04e8c02736d8bc60bb, type: 3}
   m_Name: Black Debuff
   m_EditorClassIdentifier: Assembly-CSharp::RouletteEffectData
-  color: {r: 0, g: 0, b: 0, a: 1}
+  rouletteImage: {fileID: -1269897970350842876, guid: 08639d70b38e83d46909d14a805a7474, type: 3}
   effect: 6
-  statRange: {x: 2, y: 5}
+  statRange: {x: 1, y: 1}

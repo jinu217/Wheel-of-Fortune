@@ -10,6 +10,7 @@ public class PlayerInventoryManager : MonoBehaviour
     [SerializeField] private PlayerStatManager playerStats;
     [Tooltip("플레이어가 보유한 소모품 목록입니다. 최대 3개까지 보유합니다.")]
     [SerializeField] private List<ItemData> items = new List<ItemData>();
+    private BattleManager battleManager;
 
     public int Capacity => MaxInventorySize;
     public bool IsFull => items.Count >= MaxInventorySize;
@@ -20,6 +21,11 @@ public class PlayerInventoryManager : MonoBehaviour
     public void SetPlayerStats(PlayerStatManager stats)
     {
         playerStats = stats;
+    }
+
+    public void SetBattleManager(BattleManager manager)
+    {
+        battleManager = manager;
     }
 
     public bool TryAddItem(ItemData item)
@@ -53,6 +59,7 @@ public class PlayerInventoryManager : MonoBehaviour
         }
 
         ItemData item = items[itemIndex];
+        bool applied = true;
         switch (item.Effect)
         {
             case ItemEffectType.Heal:
@@ -65,16 +72,52 @@ public class PlayerInventoryManager : MonoBehaviour
                 playerStats.AddTimedModifier(StatType.Defense, item.Value, 1);
                 break;
             case ItemEffectType.AttackRouletteCoin:
+                if (!HasActiveBattle()) { applied = false; break; }
                 playerStats.AddAttackRouletteCoins(item.Value);
                 break;
             case ItemEffectType.DefenseRouletteCoin:
+                if (!HasActiveBattle()) { applied = false; break; }
                 playerStats.AddDefenseRouletteCoins(item.Value);
+                break;
+            case ItemEffectType.DodgeNextAttack:
+                if (!HasActiveBattle()) { applied = false; break; }
+                playerStats.AddDodge(1);
+                break;
+            case ItemEffectType.DamageEnemy:
+                if (!HasActiveBattle()) { applied = false; break; }
+                battleManager.DamageMonsterWithItem(item.Value);
+                break;
+            case ItemEffectType.DelayEnemyTurn:
+                if (!HasActiveBattle()) { applied = false; break; }
+                battleManager.DelayMonsterOneTurn();
+                break;
+            case ItemEffectType.Barrier:
+                if (!HasActiveBattle()) { applied = false; break; }
+                playerStats.AddBarrier(item.Value);
+                break;
+            case ItemEffectType.Mushroom:
+                if (!HasActiveBattle()) { applied = false; break; }
+                playerStats.AddTimedModifier(StatType.Attack, 3, 3);
+                playerStats.AddTimedModifier(StatType.Defense, -1, 3);
+                break;
+            case ItemEffectType.FateCoin:
+                applied = HasActiveBattle() && battleManager.UseFateCoin();
+                break;
+            case ItemEffectType.DoubleBattleGold:
+                if (!HasActiveBattle()) { applied = false; break; }
+                battleManager.DoubleBattleGold();
                 break;
         }
 
+        if (!applied) return false;
         items.RemoveAt(itemIndex);
         InventoryChanged?.Invoke();
         return true;
+    }
+
+    private bool HasActiveBattle()
+    {
+        return battleManager != null && battleManager.IsBattleActive;
     }
 
     public void ClearInventory()

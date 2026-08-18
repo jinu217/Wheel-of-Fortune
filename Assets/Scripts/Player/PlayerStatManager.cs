@@ -27,11 +27,18 @@ public class PlayerStatManager : MonoBehaviour
     private int initialAttack;
     private int initialDefense;
     private int initialCoin;
+    private int battleAttackModifier;
+    private int battleDefenseModifier;
+    private int pendingDodges;
+    private int permanentAttackCoinBonus;
+    private int permanentDefenseCoinBonus;
+    private int lowHpAttackBonus;
 
     public int MaxHp => maxHp + GetModifierTotal(StatType.MaxHp);
     public int CurrentHp => currentHp;
-    public int Attack => attack + GetModifierTotal(StatType.Attack);
-    public int Defense => defense + GetModifierTotal(StatType.Defense);
+    public int Attack => attack + battleAttackModifier + GetModifierTotal(StatType.Attack)
+        + (currentHp * 2 <= MaxHp ? lowHpAttackBonus : 0);
+    public int Defense => defense + battleDefenseModifier + GetModifierTotal(StatType.Defense);
     public int Coin => coin;
     public int AttackRouletteCoins => attackRouletteCoins;
     public int DefenseRouletteCoins => defenseRouletteCoins;
@@ -40,6 +47,7 @@ public class PlayerStatManager : MonoBehaviour
 
     public event Action StatsChanged;
     public event Action PlayerDied;
+    public event Action<int> DamageTaken;
 
     private void Awake()
     {
@@ -59,18 +67,27 @@ public class PlayerStatManager : MonoBehaviour
         attackRouletteCoins = 1;
         defenseRouletteCoins = 1;
         barrier = 0;
+        battleAttackModifier = 0;
+        battleDefenseModifier = 0;
+        pendingDodges = 0;
+        permanentAttackCoinBonus = 0;
+        permanentDefenseCoinBonus = 0;
+        lowHpAttackBonus = 0;
         timedModifiers.Clear();
         StatsChanged?.Invoke();
     }
 
     public int TakeDamage(int rawDamage)
     {
-        int damage = Mathf.Max(0, rawDamage - Defense);
+        // 방어력은 방어 룰렛 성공 시 생성되는 배리어의 기준 수치이며,
+        // 피격 피해를 상시 감소시키지는 않습니다.
+        int damage = Mathf.Max(0, rawDamage);
         int absorbed = Mathf.Min(barrier, damage);
         barrier -= absorbed;
         damage -= absorbed;
         currentHp = Mathf.Max(0, currentHp - damage);
         StatsChanged?.Invoke();
+        if (damage > 0) DamageTaken?.Invoke(damage);
 
         if (IsDead)
         {
@@ -96,6 +113,36 @@ public class PlayerStatManager : MonoBehaviour
     {
         barrier = Mathf.Max(0, barrier + Mathf.Max(0, amount));
         StatsChanged?.Invoke();
+    }
+
+    public void ResetBattleState()
+    {
+        battleAttackModifier = 0;
+        battleDefenseModifier = 0;
+        pendingDodges = 0;
+        barrier = 0;
+        StatsChanged?.Invoke();
+    }
+
+    public void AddBattleStatModifier(int attackAmount, int defenseAmount)
+    {
+        battleAttackModifier += attackAmount;
+        battleDefenseModifier += defenseAmount;
+        StatsChanged?.Invoke();
+    }
+
+    public void AddDodge(int count = 1)
+    {
+        pendingDodges += Mathf.Max(0, count);
+        StatsChanged?.Invoke();
+    }
+
+    public bool TryConsumeDodge()
+    {
+        if (pendingDodges <= 0) return false;
+        pendingDodges--;
+        StatsChanged?.Invoke();
+        return true;
     }
 
     public void AddPermanentStat(StatType statType, int amount)
@@ -169,8 +216,8 @@ public class PlayerStatManager : MonoBehaviour
 
     public void ResetBattleRouletteCoins()
     {
-        attackRouletteCoins = 1;
-        defenseRouletteCoins = 1;
+        attackRouletteCoins = Mathf.Max(0, 1 + permanentAttackCoinBonus);
+        defenseRouletteCoins = Mathf.Max(0, 1 + permanentDefenseCoinBonus);
         StatsChanged?.Invoke();
     }
 
@@ -207,6 +254,24 @@ public class PlayerStatManager : MonoBehaviour
     public void AddDefenseRouletteCoins(int amount)
     {
         defenseRouletteCoins = Mathf.Max(0, defenseRouletteCoins + amount);
+        StatsChanged?.Invoke();
+    }
+
+    public void AddPermanentAttackRouletteCoins(int amount)
+    {
+        permanentAttackCoinBonus += amount;
+        StatsChanged?.Invoke();
+    }
+
+    public void AddPermanentDefenseRouletteCoins(int amount)
+    {
+        permanentDefenseCoinBonus += amount;
+        StatsChanged?.Invoke();
+    }
+
+    public void SetLowHpAttackBonus(int amount)
+    {
+        lowHpAttackBonus = Mathf.Max(0, amount);
         StatsChanged?.Invoke();
     }
 

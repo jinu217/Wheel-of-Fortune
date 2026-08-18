@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c3f0056152c3ae04e8c02736d8bc60bb, type: 3}
   m_Name: Red Failure
   m_EditorClassIdentifier: Assembly-CSharp::RouletteEffectData
-  color: {r: 1, g: 0, b: 0, a: 1}
+  rouletteImage: {fileID: -7285279818156801979, guid: e21f9dc92f5f3484bbffbae705a904b0, type: 3}
   effect: 5
   statRange: {x: 0, y: 0}

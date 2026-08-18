@@ -43,6 +43,7 @@ public class BattleUIController : MonoBehaviour
     private PlayerStatManager playerStats;
     private PlayerInventoryManager inventory;
     private readonly List<Image> rouletteCoinImages = new List<Image>();
+    private readonly Button[] inventorySlotButtons = new Button[3];
 
     private void OnEnable()
     {
@@ -141,7 +142,7 @@ public class BattleUIController : MonoBehaviour
 
         if (barrierText != null)
         {
-            barrierText.text = $"+ {playerStats.Barrier}";
+            barrierText.text = $"{playerStats.Barrier}";
         }
 
         RefreshRouletteButton();
@@ -202,6 +203,16 @@ public class BattleUIController : MonoBehaviour
             inventorySlotImages[i].color = icon == null
                 ? new Color(0.13f, 0.15f, 0.21f, 0.95f)
                 : Color.white;
+            if (i < inventorySlotButtons.Length)
+            {
+                int itemIndex = i;
+                inventorySlotButtons[i] ??= inventorySlotImages[i].GetComponent<Button>();
+                inventorySlotButtons[i] ??= inventorySlotImages[i].gameObject.AddComponent<Button>();
+                inventorySlotButtons[i].targetGraphic = inventorySlotImages[i];
+                inventorySlotButtons[i].onClick.RemoveAllListeners();
+                inventorySlotButtons[i].onClick.AddListener(() => inventory?.UseItem(itemIndex));
+                inventorySlotButtons[i].interactable = inventory != null && i < inventory.Items.Count;
+            }
         }
     }
 
@@ -361,7 +372,7 @@ public class BattleUIController : MonoBehaviour
 
         if (monsterBarrierText != null && monster.Data != null)
         {
-            monsterBarrierText.text = $"+ {monster.Barrier}";
+            monsterBarrierText.text = $"{monster.Barrier}";
         }
 
         if (monsterHpSlider != null && monster.Data != null)

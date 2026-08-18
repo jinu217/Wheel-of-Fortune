@@ -299,6 +299,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameSessionManager
   playerStats: {fileID: 620602388}
   playerInventory: {fileID: 620602387}
+  playerAbilities: {fileID: 0}
+  chanceSystem: {fileID: 0}
   completedEventPositions: []
 --- !u!114 &620602387
 MonoBehaviour:
@@ -328,11 +330,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerStatManager
   maxHp: 100
   currentHp: 100
-  attack: 20
+  attack: 1000
   defense: 10
-  coin: 0
+  coin: 100
   attackRouletteCoins: 1
   defenseRouletteCoins: 1
+  barrier: 0
 --- !u!4 &620602389
 Transform:
   m_ObjectHideFlags: 0
@@ -511,7 +514,7 @@ MonoBehaviour:
   m_text: wheel of fortune
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 44ed1a1e60687294784f44838faf78d9, type: 2}
-  m_sharedMaterial: {fileID: 4864265485273363892, guid: 44ed1a1e60687294784f44838faf78d9, type: 2}
+  m_sharedMaterial: {fileID: 4335182957635283290, guid: 44ed1a1e60687294784f44838faf78d9, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -726,8 +729,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: Button
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 44ed1a1e60687294784f44838faf78d9, type: 2}
-  m_sharedMaterial: {fileID: 4864265485273363892, guid: 44ed1a1e60687294784f44838faf78d9, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []

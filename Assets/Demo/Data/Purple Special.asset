@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c3f0056152c3ae04e8c02736d8bc60bb, type: 3}
   m_Name: Purple Special
   m_EditorClassIdentifier: Assembly-CSharp::RouletteEffectData
-  color: {r: 0.55, g: 0.2, b: 0.75, a: 1}
+  rouletteImage: {fileID: 5300504976910581232, guid: e2f15151463654e4f81e789d14976eb1, type: 3}
   effect: 7
   statRange: {x: 2, y: 5}

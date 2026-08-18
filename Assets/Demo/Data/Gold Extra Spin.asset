@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c3f0056152c3ae04e8c02736d8bc60bb, type: 3}
   m_Name: Gold Extra Spin
   m_EditorClassIdentifier: Assembly-CSharp::RouletteEffectData
-  color: {r: 1, g: 0.72, b: 0.05, a: 1}
+  rouletteImage: {fileID: -3283697968429745725, guid: 6d7a702480d2dc140b15e21eeb30e4f8, type: 3}
   effect: 2
   statRange: {x: 2, y: 5}

@@ -5,11 +5,11 @@ using UnityEngine;
 using UnityEngine.UI;
 
 [Serializable]
-public struct RouletteColorCount
+public struct RouletteEffectCount
 {
-    [Tooltip("룰렛 칸에 적용할 색상입니다.")]
-    public Color color;
-    [Tooltip("이 색상을 배치할 룰렛 칸 개수입니다. 전체 합계는 10이어야 합니다.")]
+    [Tooltip("룰렛 칸에 적용할 효과 종류입니다.")]
+    public RouletteEffectType effect;
+    [Tooltip("이 효과를 배치할 룰렛 칸 개수입니다. 전체 합계는 10이어야 합니다.")]
     [Range(0, 10)] public int count;
 }
 
@@ -34,15 +34,31 @@ public class RouletteController : MonoBehaviour
     [Header("10 slots arranged in a circle")]
     [Tooltip("원형으로 배치한 룰렛 칸 이미지 10개입니다.")]
     [SerializeField] private Image[] slotImages = new Image[SlotCount];
-    [Tooltip("룰렛 색상과 일치하는 효과 데이터 목록입니다.")]
+    [Tooltip("효과 종류별 룰렛 이미지와 수치가 저장된 데이터 목록입니다.")]
     [SerializeField] private List<RouletteEffectData> availableEffects = new List<RouletteEffectData>();
     [Tooltip("룰렛 결과를 적용할 플레이어입니다. 전투 씬에서 자동 연결할 수 있습니다.")]
     [SerializeField] private PlayerStatManager playerStats;
     [Tooltip("전투 시작 시 룰렛 10칸에 적용할 색상별 개수입니다. 합계는 반드시 10이어야 합니다.")]
-    [SerializeField] private List<RouletteColorCount> initialConfiguration = new List<RouletteColorCount>
+    [SerializeField] private List<RouletteEffectCount> initialConfiguration = new List<RouletteEffectCount>
     {
-        new RouletteColorCount { color = Color.green, count = 9 },
-        new RouletteColorCount { color = Color.red, count = 1 }
+        new RouletteEffectCount { effect = RouletteEffectType.Success, count = 9 },
+        new RouletteEffectCount { effect = RouletteEffectType.Failure, count = 1 }
+    };
+    [Tooltip("운명의 코인 성공 시 사용할 행운 룰렛 구성입니다.")]
+    [SerializeField] private List<RouletteEffectCount> fortuneConfiguration = new List<RouletteEffectCount>
+    {
+        new RouletteEffectCount { effect = RouletteEffectType.Success, count = 4 },
+        new RouletteEffectCount { effect = RouletteEffectType.GreatSuccess, count = 2 },
+        new RouletteEffectCount { effect = RouletteEffectType.ExtraSpin, count = 2 },
+        new RouletteEffectCount { effect = RouletteEffectType.Heal, count = 1 },
+        new RouletteEffectCount { effect = RouletteEffectType.SelfBuff, count = 1 }
+    };
+    [Tooltip("운명의 코인 실패 시 사용할 불행 룰렛 구성입니다.")]
+    [SerializeField] private List<RouletteEffectCount> misfortuneConfiguration = new List<RouletteEffectCount>
+    {
+        new RouletteEffectCount { effect = RouletteEffectType.Failure, count = 5 },
+        new RouletteEffectCount { effect = RouletteEffectType.Success, count = 3 },
+        new RouletteEffectCount { effect = RouletteEffectType.SelfDebuff, count = 2 }
     };
     [Header("Spin Animation")]
     [Tooltip("회전 애니메이션을 적용할 룰렛 UI Transform입니다.")]
@@ -53,6 +69,8 @@ public class RouletteController : MonoBehaviour
     [SerializeField] private AnimationCurve spinCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
     private readonly RouletteEffectData[] appliedSlots = new RouletteEffectData[SlotCount];
+    private bool restoreDefaultAfterSpin;
+    private PlayerAbilityManager abilities;
 
     public event Action<int, RouletteEffectData, int> ResultSelected;
     public bool IsSpinning { get; private set; }
@@ -62,20 +80,34 @@ public class RouletteController : MonoBehaviour
         playerStats = stats;
     }
 
+    public void SetAbilityManager(PlayerAbilityManager manager)
+    {
+        abilities = manager;
+    }
+
     public bool ConfigureInitialSlots()
     {
         return Configure(initialConfiguration);
     }
 
-    public bool Configure(IReadOnlyList<RouletteColorCount> colorCounts)
+    public bool ConfigureFateCoinSpin()
     {
-        if (colorCounts == null || slotImages == null || slotImages.Length != SlotCount)
+        if (restoreDefaultAfterSpin) return false;
+        bool fortune = UnityEngine.Random.value < 0.75f;
+        bool configured = Configure(fortune ? fortuneConfiguration : misfortuneConfiguration);
+        restoreDefaultAfterSpin = configured;
+        return configured;
+    }
+
+    public bool Configure(IReadOnlyList<RouletteEffectCount> effectCounts)
+    {
+        if (effectCounts == null || slotImages == null || slotImages.Length != SlotCount)
         {
             return false;
         }
 
         int requestedCount = 0;
-        foreach (RouletteColorCount setting in colorCounts)
+        foreach (RouletteEffectCount setting in effectCounts)
         {
             requestedCount += setting.count;
         }
@@ -87,24 +119,155 @@ public class RouletteController : MonoBehaviour
         }
 
         int slotIndex = 0;
-        foreach (RouletteColorCount setting in colorCounts)
+        foreach (RouletteEffectCount setting in effectCounts)
         {
-            RouletteEffectData effect = FindEffectByColor(setting.color);
+            RouletteEffectData effect = availableEffects.Find(data => data != null && data.Effect == setting.effect);
             if (effect == null)
             {
-                Debug.LogError($"No RouletteEffectData matches color {setting.color}.", this);
+                Debug.LogError($"{setting.effect} 효과의 RouletteEffectData가 없습니다.", this);
                 return false;
             }
 
             for (int i = 0; i < setting.count; i++)
             {
                 appliedSlots[slotIndex] = effect;
-                slotImages[slotIndex].color = effect.Color;
+                ApplySlotVisual(slotIndex, effect);
                 slotIndex++;
             }
         }
 
+        ApplyChanceMutations();
+        ApplyAbilitySlotConversions();
+
         return true;
+    }
+
+    private void ApplyChanceMutations()
+    {
+        ChanceSystemManager chanceSystem = GameSessionManager.Instance == null
+            ? null : GameSessionManager.Instance.ChanceSystem;
+        if (chanceSystem == null) return;
+
+        foreach (ChanceRouletteMutation mutation in chanceSystem.RouletteMutations)
+        {
+            System.Random random = new System.Random(mutation.seed);
+            switch (mutation.type)
+            {
+                case ChanceRouletteMutationType.GreenTwoToRed:
+                    ReplaceRandom(RouletteEffectType.Success, RouletteEffectType.Failure, 2, random);
+                    break;
+                case ChanceRouletteMutationType.RedToBlackGreenToWhite:
+                    ReplaceRandom(RouletteEffectType.Failure, RouletteEffectType.SelfDebuff, 1, random);
+                    ReplaceRandom(RouletteEffectType.Success, RouletteEffectType.SelfBuff, 1, random);
+                    break;
+                case ChanceRouletteMutationType.GreenTwoToGold:
+                    ReplaceRandom(RouletteEffectType.Success, RouletteEffectType.ExtraSpin, 2, random);
+                    break;
+                case ChanceRouletteMutationType.RedGreenToYellow:
+                    ReplaceRandom(RouletteEffectType.Failure, RouletteEffectType.Heal, 1, random);
+                    ReplaceRandom(RouletteEffectType.Success, RouletteEffectType.Heal, 1, random);
+                    break;
+                case ChanceRouletteMutationType.RandomOneToBlack:
+                    ReplaceRandomExcluding(new[] { RouletteEffectType.SelfDebuff },
+                        RouletteEffectType.SelfDebuff, 1, random);
+                    break;
+                case ChanceRouletteMutationType.GreenTwoToBlue:
+                    ReplaceRandom(RouletteEffectType.Success, RouletteEffectType.GreatSuccess, 2, random);
+                    break;
+                case ChanceRouletteMutationType.SafeTwoToRedBlack:
+                    ReplaceRandomExcluding(new[] { RouletteEffectType.Failure, RouletteEffectType.SelfDebuff },
+                        RouletteEffectType.Failure, 1, random);
+                    ReplaceRandomExcluding(new[] { RouletteEffectType.Failure, RouletteEffectType.SelfDebuff },
+                        RouletteEffectType.SelfDebuff, 1, random);
+                    break;
+                case ChanceRouletteMutationType.GreenToLuckyAndUnlucky:
+                    RouletteEffectType lucky = new[] { RouletteEffectType.GreatSuccess, RouletteEffectType.ExtraSpin,
+                        RouletteEffectType.SelfBuff, RouletteEffectType.Heal }[random.Next(0, 4)];
+                    RouletteEffectType unlucky = random.Next(0, 2) == 0
+                        ? RouletteEffectType.Failure : RouletteEffectType.SelfDebuff;
+                    ReplaceRandom(RouletteEffectType.Success, lucky, 1, random);
+                    ReplaceRandom(RouletteEffectType.Success, unlucky, 1, random);
+                    break;
+            }
+        }
+    }
+
+    private void ReplaceRandom(RouletteEffectType source, RouletteEffectType target, int count,
+        System.Random random)
+    {
+        List<int> candidates = new List<int>();
+        for (int i = 0; i < appliedSlots.Length; i++)
+            if (appliedSlots[i] != null && appliedSlots[i].Effect == source) candidates.Add(i);
+        ReplaceCandidateSlots(candidates, target, count, random);
+    }
+
+    private void ReplaceRandomExcluding(RouletteEffectType[] excluded, RouletteEffectType target,
+        int count, System.Random random)
+    {
+        List<int> candidates = new List<int>();
+        for (int i = 0; i < appliedSlots.Length; i++)
+        {
+            if (appliedSlots[i] == null) continue;
+            bool blocked = Array.Exists(excluded, effect => appliedSlots[i].Effect == effect);
+            if (!blocked) candidates.Add(i);
+        }
+        ReplaceCandidateSlots(candidates, target, count, random);
+    }
+
+    private void ReplaceCandidateSlots(List<int> candidates, RouletteEffectType target, int count,
+        System.Random random)
+    {
+        RouletteEffectData replacement = availableEffects.Find(data => data != null && data.Effect == target);
+        if (replacement == null) return;
+        for (int i = 0; i < count && candidates.Count > 0; i++)
+        {
+            int candidateIndex = random.Next(0, candidates.Count);
+            int slotIndex = candidates[candidateIndex];
+            candidates.RemoveAt(candidateIndex);
+            appliedSlots[slotIndex] = replacement;
+            ApplySlotVisual(slotIndex, replacement);
+        }
+    }
+
+    private void ApplyAbilitySlotConversions()
+    {
+        if (abilities == null) return;
+
+        if (abilities.Has(PassiveAbilityType.GreenToGold))
+        {
+            ReplaceFirstSuccessSlot(RouletteEffectType.ExtraSpin);
+        }
+
+        if (abilities.Has(PassiveAbilityType.GreenToBlue))
+        {
+            ReplaceFirstSuccessSlot(RouletteEffectType.GreatSuccess);
+        }
+    }
+
+    private void ReplaceFirstSuccessSlot(RouletteEffectType replacementType)
+    {
+        RouletteEffectData replacement = availableEffects.Find(
+            data => data != null && data.Effect == replacementType);
+        if (replacement == null) return;
+
+        for (int i = 0; i < appliedSlots.Length; i++)
+        {
+            if (appliedSlots[i] != null && appliedSlots[i].Effect == RouletteEffectType.Success)
+            {
+                appliedSlots[i] = replacement;
+                ApplySlotVisual(i, replacement);
+                return;
+            }
+        }
+    }
+
+    private void ApplySlotVisual(int slotIndex, RouletteEffectData effect)
+    {
+        if (effect == null || slotImages == null || slotIndex < 0 || slotIndex >= slotImages.Length
+            || slotImages[slotIndex] == null) return;
+        Image image = slotImages[slotIndex];
+        image.sprite = effect.RouletteImage;
+        image.color = effect.RouletteImage == null ? Color.clear : Color.white;
     }
 
     public RouletteSpinResult Spin()
@@ -138,6 +301,8 @@ public class RouletteController : MonoBehaviour
         {
             ApplyEffect(result.Effect, value);
         }
+
+        RestoreDefaultConfigurationIfNeeded();
 
         ResultSelected?.Invoke(selectedIndex, result, value);
         return new RouletteSpinResult(selectedIndex, result, value);
@@ -181,14 +346,17 @@ public class RouletteController : MonoBehaviour
         }
 
         RouletteSpinResult result = new RouletteSpinResult(selectedIndex, effect, value);
+        RestoreDefaultConfigurationIfNeeded();
         ResultSelected?.Invoke(selectedIndex, effect, value);
         IsSpinning = false;
         onCompleted?.Invoke(result);
     }
 
-    private RouletteEffectData FindEffectByColor(Color requestedColor)
+    private void RestoreDefaultConfigurationIfNeeded()
     {
-        return availableEffects.Find(data => data != null && Approximately(data.Color, requestedColor));
+        if (!restoreDefaultAfterSpin) return;
+        restoreDefaultAfterSpin = false;
+        Configure(initialConfiguration);
     }
 
     private void ApplyEffect(RouletteEffectType effect, int value)
@@ -201,26 +369,15 @@ public class RouletteController : MonoBehaviour
         switch (effect)
         {
             case RouletteEffectType.SelfBuff:
-                playerStats.AddPermanentStat(StatType.Attack, value);
-                playerStats.AddPermanentStat(StatType.Defense, value);
+                playerStats.AddBattleStatModifier(1, 1);
                 break;
             case RouletteEffectType.Heal:
-                playerStats.Heal(value);
+                playerStats.Heal(10);
                 break;
             case RouletteEffectType.SelfDebuff:
-                playerStats.AddTimedModifier(StatType.Attack, -Mathf.Abs(value), 1);
-                playerStats.AddTimedModifier(StatType.Defense, -Mathf.Abs(value), 1);
+                playerStats.AddBattleStatModifier(-1, -1);
                 break;
         }
-    }
-
-    private static bool Approximately(Color left, Color right)
-    {
-        const float tolerance = 0.01f;
-        return Mathf.Abs(left.r - right.r) < tolerance
-            && Mathf.Abs(left.g - right.g) < tolerance
-            && Mathf.Abs(left.b - right.b) < tolerance
-            && Mathf.Abs(left.a - right.a) < tolerance;
     }
 
     private void OnValidate()

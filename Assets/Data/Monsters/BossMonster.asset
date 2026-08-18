@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c78e61fc84c64a9ba1c90775ecdc5bb9, type: 3}
+  m_Name: BossMonster
+  m_EditorClassIdentifier: Assembly-CSharp::BossData
+  bossName: "\uBAA8\uC774\uB77C\uC774"
+  bossImage: {fileID: 0}
+  hp: 100
+  atk: 10
+  def: 5
+  atkImage: {fileID: 0}
+  defImage: {fileID: 0}
+  skillData: {fileID: 11400000, guid: 98b583081de64aaa890421960e97db98, type: 2}
+  skill1Id: 
+  skill1Image: {fileID: 0}
+  skill2Id: 
+  skill2Image: {fileID: 0}
+  skill3Id: 
+  skill3Image: {fileID: 0}
+  phase1Action1: 0
+  phase1Action2: 0
+  phase1Action3: 0
+  phase1Action4: 7
+  phase1Action5: 7
+  phase2StartHp: 50
+  phase2Atk: 15
+  phase2Def: 0
+  skill4Id: 
+  skill4Image: {fileID: 0}
+  skill5Id: 
+  skill5Image: {fileID: 0}
+  phase2Action1: 0
+  phase2Action2: 0
+  phase2Action3: 0
+  phase2Action4: 7
+  phase2Action5: 7

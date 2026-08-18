@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c3f0056152c3ae04e8c02736d8bc60bb, type: 3}
   m_Name: Yellow Heal
   m_EditorClassIdentifier: Assembly-CSharp::RouletteEffectData
-  color: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  rouletteImage: {fileID: 5300921617560465825, guid: b3507031f0b0a234cbd33ef2f30a4d5c, type: 3}
   effect: 4
-  statRange: {x: 2, y: 5}
+  statRange: {x: 10, y: 10}

@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c3f0056152c3ae04e8c02736d8bc60bb, type: 3}
   m_Name: White Buff
   m_EditorClassIdentifier: Assembly-CSharp::RouletteEffectData
-  color: {r: 1, g: 1, b: 1, a: 1}
+  rouletteImage: {fileID: -1630968327831756785, guid: 0bcbd2725341ac24a84c9fadcbb982d3, type: 3}
   effect: 3
-  statRange: {x: 2, y: 5}
+  statRange: {x: 1, y: 1}
