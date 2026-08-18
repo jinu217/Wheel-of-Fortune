@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b2f2fb5ca2b9a24ea9d775006c20fb6, type: 3}
+  m_Name: New Monster
+  m_EditorClassIdentifier: Assembly-CSharp::MonsterData
+  monsterImage: {fileID: 0}
+  hp: 1
+  atk: 0
+  def: 0
+  atkImage: {fileID: 0}
+  defImage: {fileID: 0}
+  skillData: {fileID: 11400000, guid: 98b583081de64aaa890421960e97db98, type: 2}
+  skill1Id: 9a8a6d17-94d1-40cc-8499-0bcdfba09860
+  skill1Turn: 2
+  skill1Image: {fileID: 0}
+  skill2Id: f014de88-a93b-4984-a40c-f470094fe823
+  skill2Turn: 3
+  skill2Image: {fileID: 0}
