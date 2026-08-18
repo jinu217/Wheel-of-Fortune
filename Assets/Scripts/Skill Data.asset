@@ -15,7 +15,19 @@ MonoBehaviour:
   skills:
   - id: 9a8a6d17-94d1-40cc-8499-0bcdfba09860
     skillName: "\uAC15\uD0C0"
+    description: ""
+    effectType: 0
+    effectValue: 0
+    durationTurns: 0
   - id: 40c31115-f3ca-429e-95f4-eb2501e077f5
     skillName: "\uD654\uC5FC\uAD6C"
+    description: ""
+    effectType: 0
+    effectValue: 0
+    durationTurns: 0
   - id: f014de88-a93b-4984-a40c-f470094fe823
     skillName: "\uBC29\uC5B4 \uD0DC\uC138"
+    description: ""
+    effectType: 0
+    effectValue: 0
+    durationTurns: 0

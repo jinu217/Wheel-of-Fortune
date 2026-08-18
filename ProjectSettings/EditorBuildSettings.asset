@@ -12,6 +12,9 @@ EditorBuildSettings:
     path: Assets/Scenes/InGameScene.unity
     guid: 8486c098a32bcc742a744becf9a69eae
   - enabled: 1
+    path: Assets/Scenes/IGS.unity
+    guid: e73d7aa216fa99944be204db2aebbabc
+  - enabled: 1
     path: Assets/Scenes/MonsterBattleScene.unity
     guid: 3ddd2313403391c48af1e91407c848e6
   - enabled: 1
