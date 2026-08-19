@@ -1,6 +1,8 @@
 using System.Collections;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class BattleSceneController : MonoBehaviour
 {
@@ -12,6 +14,10 @@ public class BattleSceneController : MonoBehaviour
     [SerializeField] private GameObject roulettePanel;
     [Tooltip("전투 패배 시 표시할 결과 패널입니다.")]
     [SerializeField] private GameObject defeatPanel;
+    [Tooltip("패배 후 기록을 초기화하고 메인 화면으로 이동하는 버튼입니다. 비어 있으면 패배 패널 안에 자동 생성합니다.")]
+    [SerializeField] private Button mainMenuButton;
+    [Tooltip("패배 후 돌아갈 메인 화면 씬 이름입니다.")]
+    [SerializeField] private string gameStartSceneName = "GameStartScene";
     [Tooltip("전투 승리 후 영구 능력치 3개 중 하나를 선택하게 하는 UI입니다. 비어 있으면 자동 생성합니다.")]
     [SerializeField] private BattleRewardSelectionUI rewardSelectionUI;
     [Tooltip("전투 종료 후 우연이 발동했을 때 표시할 경고 UI입니다. 비어 있으면 자동 생성합니다.")]
@@ -41,6 +47,7 @@ public class BattleSceneController : MonoBehaviour
         }
 
         defeatPanel?.SetActive(false);
+        ConfigureDefeatPanel();
         battleManager.TurnChanged += HandleTurnChanged;
         battleManager.BattleFinished += HandleBattleFinished;
         battleManager.BeginBattle(session.SelectedMonster);
@@ -81,7 +88,63 @@ public class BattleSceneController : MonoBehaviour
         }
 
         defeatPanel?.SetActive(true);
-        StartCoroutine(ReturnToInGameRoutine());
+    }
+
+    public void ReturnToMainMenu()
+    {
+        GameSessionManager.Instance?.BeginNewRun();
+        SceneManager.LoadScene(gameStartSceneName);
+    }
+
+    private void ConfigureDefeatPanel()
+    {
+        if (defeatPanel == null) return;
+
+        if (mainMenuButton == null)
+            mainMenuButton = defeatPanel.GetComponentInChildren<Button>(true);
+        if (mainMenuButton == null)
+            mainMenuButton = CreateMainMenuButton();
+        if (mainMenuButton == null) return;
+
+        mainMenuButton.onClick.RemoveListener(ReturnToMainMenu);
+        mainMenuButton.onClick.AddListener(ReturnToMainMenu);
+    }
+
+    private Button CreateMainMenuButton()
+    {
+        GameObject buttonObject = new GameObject("Main Menu Button", typeof(RectTransform),
+            typeof(CanvasRenderer), typeof(Image), typeof(Button));
+        buttonObject.layer = defeatPanel.layer;
+        buttonObject.transform.SetParent(defeatPanel.transform, false);
+
+        RectTransform buttonRect = buttonObject.GetComponent<RectTransform>();
+        buttonRect.anchorMin = buttonRect.anchorMax = new Vector2(0.5f, 0.5f);
+        buttonRect.anchoredPosition = new Vector2(0f, -90f);
+        buttonRect.sizeDelta = new Vector2(320f, 80f);
+
+        Image buttonImage = buttonObject.GetComponent<Image>();
+        buttonImage.color = new Color(0.18f, 0.18f, 0.22f, 1f);
+
+        GameObject textObject = new GameObject("Text", typeof(RectTransform),
+            typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+        textObject.layer = defeatPanel.layer;
+        textObject.transform.SetParent(buttonObject.transform, false);
+        RectTransform textRect = textObject.GetComponent<RectTransform>();
+        textRect.anchorMin = Vector2.zero;
+        textRect.anchorMax = Vector2.one;
+        textRect.offsetMin = textRect.offsetMax = Vector2.zero;
+
+        TMP_Text text = textObject.GetComponent<TMP_Text>();
+        TMP_Text panelText = defeatPanel.GetComponentInChildren<TMP_Text>(true);
+        if (panelText != null) text.font = panelText.font;
+        text.text = "메인화면으로";
+        text.fontSize = 28f;
+        text.alignment = TextAlignmentOptions.Center;
+        text.color = Color.white;
+
+        Button button = buttonObject.GetComponent<Button>();
+        button.targetGraphic = buttonImage;
+        return button;
     }
 
     private void ShowChanceOrReward()

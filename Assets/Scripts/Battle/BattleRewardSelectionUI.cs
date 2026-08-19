@@ -97,7 +97,7 @@ public class BattleRewardSelectionUI : MonoBehaviour
 
     private void ApplyRewardFont()
     {
-        rewardFont = FindNeodgmFont();
+        rewardFont = FindRidibatangFont();
         if (rewardFont == null || rewardTexts == null) return;
 
         foreach (TMP_Text rewardText in rewardTexts)
@@ -106,14 +106,14 @@ public class BattleRewardSelectionUI : MonoBehaviour
         }
     }
 
-    private TMP_FontAsset FindNeodgmFont()
+    private TMP_FontAsset FindRidibatangFont()
     {
         if (rewardTexts != null)
         {
             foreach (TMP_Text rewardText in rewardTexts)
             {
                 if (rewardText != null && rewardText.font != null
-                    && rewardText.font.name.IndexOf("neodgm", StringComparison.OrdinalIgnoreCase) >= 0)
+                    && rewardText.font.name.IndexOf("RIDIBatang", StringComparison.OrdinalIgnoreCase) >= 0)
                     return rewardText.font;
             }
         }
@@ -122,7 +122,7 @@ public class BattleRewardSelectionUI : MonoBehaviour
         foreach (TMP_Text sceneText in sceneTexts)
         {
             if (sceneText.font != null
-                && sceneText.font.name.IndexOf("neodgm", StringComparison.OrdinalIgnoreCase) >= 0)
+                && sceneText.font.name.IndexOf("RIDIBatang", StringComparison.OrdinalIgnoreCase) >= 0)
                 return sceneText.font;
         }
 
@@ -163,7 +163,7 @@ public class BattleRewardSelectionUI : MonoBehaviour
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920f, 1080f);
         }
-        rewardFont = FindNeodgmFont();
+        rewardFont = FindRidibatangFont();
 
         rewardPanel = CreateUIObject("Permanent Stat Reward Panel", canvas.transform, typeof(Image));
         StretchToParent(rewardPanel.GetComponent<RectTransform>());

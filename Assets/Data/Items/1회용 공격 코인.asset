@@ -17,4 +17,4 @@ MonoBehaviour:
   effect: 3
   value: 1
   price: 20
-  itemImage: {fileID: 21300000, guid: a7d47772a13d3b24c81a9a47ebacbaed, type: 3}
+  itemImage: {fileID: 1208040086343421634, guid: 8357fd84f199b5f42860a8dec52e8d8c, type: 3}

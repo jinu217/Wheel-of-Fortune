@@ -13,11 +13,19 @@ public class GameSessionManager : MonoBehaviour
     [SerializeField] private PlayerAbilityManager playerAbilities;
     [Tooltip("우연 발동 확률과 게임오버까지 유지되는 우연 효과를 관리합니다.")]
     [SerializeField] private ChanceSystemManager chanceSystem;
+    [Header("기본 배경음악")]
+    [Tooltip("게임 실행 중 모든 씬에서 반복 재생할 기본 배경음악입니다. 오디오는 나중에 지정해도 됩니다.")]
+    [SerializeField] private AudioClip defaultBackgroundMusic;
+    [Tooltip("기본 배경음악의 음량입니다.")]
+    [Range(0f, 1f)] [SerializeField] private float backgroundMusicVolume = 0.5f;
     [Tooltip("이미 완료한 인게임 이벤트의 좌표 목록입니다.")]
     [SerializeField] private List<Vector2Int> completedEventPositions = new List<Vector2Int>();
+    [Tooltip("현재 게임에서 이미 등장하여 다시 추첨하지 않을 일반 몬스터 목록입니다.")]
+    [SerializeField] private List<MonsterData> encounteredMonsters = new List<MonsterData>();
 
     private Vector2Int currentEventPosition;
     private bool hasCurrentEvent;
+    private AudioSource backgroundMusicSource;
 
     public PlayerStatManager PlayerStats => playerStats;
     public PlayerInventoryManager PlayerInventory => playerInventory;
@@ -30,6 +38,7 @@ public class GameSessionManager : MonoBehaviour
     public bool? LastBattleWon { get; private set; }
     public int MapSeed { get; private set; }
     public string BattleReturnSceneName { get; private set; }
+    public IReadOnlyList<MonsterData> EncounteredMonsters => encounteredMonsters;
 
     private void Awake()
     {
@@ -47,7 +56,35 @@ public class GameSessionManager : MonoBehaviour
         chanceSystem ??= GetComponentInChildren<ChanceSystemManager>();
         chanceSystem ??= gameObject.AddComponent<ChanceSystemManager>();
         chanceSystem.SetPlayerData(playerStats, playerInventory, playerAbilities);
+        ConfigureBackgroundMusic();
         DontDestroyOnLoad(transform.root.gameObject);
+    }
+
+    private void ConfigureBackgroundMusic()
+    {
+        backgroundMusicSource = gameObject.AddComponent<AudioSource>();
+        backgroundMusicSource.playOnAwake = false;
+        backgroundMusicSource.loop = true;
+        backgroundMusicSource.volume = backgroundMusicVolume;
+        backgroundMusicSource.clip = defaultBackgroundMusic;
+
+        if (defaultBackgroundMusic != null)
+            backgroundMusicSource.Play();
+    }
+
+    public void SetBackgroundMusic(AudioClip music)
+    {
+        defaultBackgroundMusic = music;
+        if (backgroundMusicSource == null) ConfigureBackgroundMusic();
+        backgroundMusicSource.clip = music;
+        if (music != null) backgroundMusicSource.Play();
+        else backgroundMusicSource.Stop();
+    }
+
+    public void SetBackgroundMusicVolume(float volume)
+    {
+        backgroundMusicVolume = Mathf.Clamp01(volume);
+        if (backgroundMusicSource != null) backgroundMusicSource.volume = backgroundMusicVolume;
     }
 
     public void SetCurrentEvent(Vector2Int position)
@@ -63,6 +100,8 @@ public class GameSessionManager : MonoBehaviour
         SetCurrentEvent(eventPosition);
         LastBattleWon = null;
         BattleReturnSceneName = returnSceneName;
+        if (monster != null && !encounteredMonsters.Contains(monster))
+            encounteredMonsters.Add(monster);
     }
 
     public void PrepareBossBattle(BossData boss, Vector2Int eventPosition, string returnSceneName = null)
@@ -107,6 +146,7 @@ public class GameSessionManager : MonoBehaviour
         playerAbilities?.ResetForNewRun();
         chanceSystem?.ResetForNewRun();
         completedEventPositions.Clear();
+        encounteredMonsters.Clear();
         hasCurrentEvent = false;
         SelectedMonster = null;
         SelectedBoss = null;

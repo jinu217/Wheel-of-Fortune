@@ -13,33 +13,36 @@ MonoBehaviour:
   m_Name: BossMonster
   m_EditorClassIdentifier: Assembly-CSharp::BossData
   bossName: "\uBAA8\uC774\uB77C\uC774"
-  bossImage: {fileID: 0}
+  bossImage: {fileID: -1804898028770364079, guid: 30cffdcbfaaa8b24cacf3bc0e2c8d689, type: 3}
   hp: 100
   atk: 10
   def: 5
-  atkImage: {fileID: 0}
-  defImage: {fileID: 0}
+  atkImage: {fileID: 21300000, guid: d8a05aa6bd96e2f499fdaa48f00d4c70, type: 3}
+  defImage: {fileID: 8920735953785130164, guid: 6ba9c81397a67354c9879a493cb890b4, type: 3}
   skillData: {fileID: 11400000, guid: 98b583081de64aaa890421960e97db98, type: 2}
-  skill1Id: 
-  skill1Image: {fileID: 0}
-  skill2Id: 
-  skill2Image: {fileID: 0}
-  skill3Id: 
-  skill3Image: {fileID: 0}
+  skill1Id: 8ec8ece9-f4dd-4c8c-994f-000000000013
+  skill1Image: {fileID: -1741007838025643578, guid: 67df86f8970d8424e9ca1fb2bf604228, type: 3}
+  skill2Id: 8ec8ece9-f4dd-4c8c-994f-000000000014
+  skill2Image: {fileID: -1741007838025643578, guid: 67df86f8970d8424e9ca1fb2bf604228, type: 3}
+  skill3Id: 8ec8ece9-f4dd-4c8c-994f-000000000015
+  skill3Image: {fileID: -1741007838025643578, guid: 67df86f8970d8424e9ca1fb2bf604228, type: 3}
   phase1Action1: 0
-  phase1Action2: 0
-  phase1Action3: 0
-  phase1Action4: 7
-  phase1Action5: 7
+  phase1Action2: 2
+  phase1Action3: 1
+  phase1Action4: 2
+  phase1Action5: 0
+  phase1Action6: 1
+  phase1Action7: 4
+  phase2BossImage: {fileID: 6038989571728737099, guid: 5fe64eab664052e408d6f13baf23636d, type: 3}
   phase2StartHp: 50
   phase2Atk: 15
   phase2Def: 0
-  skill4Id: 
-  skill4Image: {fileID: 0}
-  skill5Id: 
-  skill5Image: {fileID: 0}
+  skill4Id: 8ec8ece9-f4dd-4c8c-994f-000000000016
+  skill4Image: {fileID: -1741007838025643578, guid: 67df86f8970d8424e9ca1fb2bf604228, type: 3}
+  skill5Id: 8ec8ece9-f4dd-4c8c-994f-000000000017
+  skill5Image: {fileID: -1741007838025643578, guid: 67df86f8970d8424e9ca1fb2bf604228, type: 3}
   phase2Action1: 0
-  phase2Action2: 0
+  phase2Action2: 5
   phase2Action3: 0
-  phase2Action4: 7
-  phase2Action5: 7
+  phase2Action4: 5
+  phase2Action5: 6

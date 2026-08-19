@@ -64,12 +64,13 @@ public class RouletteController : MonoBehaviour
     [Tooltip("회전 애니메이션을 적용할 룰렛 UI Transform입니다.")]
     [SerializeField] private RectTransform wheelTransform;
     [Tooltip("룰렛 회전 시간의 최소값(X)과 최대값(Y)입니다.")]
-    [SerializeField] private Vector2 spinDurationRange = new Vector2(3f, 5f);
+    [SerializeField] private Vector2 spinDurationRange = new Vector2(2f, 4f);
     [Tooltip("룰렛의 가속과 감속 형태를 결정하는 애니메이션 곡선입니다.")]
     [SerializeField] private AnimationCurve spinCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
     private readonly RouletteEffectData[] appliedSlots = new RouletteEffectData[SlotCount];
     private bool restoreDefaultAfterSpin;
+    private int monsterGreenToRedConversions;
     private PlayerAbilityManager abilities;
 
     public event Action<int, RouletteEffectData, int> ResultSelected;
@@ -138,8 +139,38 @@ public class RouletteController : MonoBehaviour
 
         ApplyChanceMutations();
         ApplyAbilitySlotConversions();
+        ApplyMonsterSlotConversions();
 
         return true;
+    }
+
+    public void ResetMonsterSlotChanges()
+    {
+        monsterGreenToRedConversions = 0;
+    }
+
+    public bool ConvertOneGreenToRedByMonster()
+    {
+        RouletteEffectData replacement = availableEffects.Find(data =>
+            data != null && data.Effect == RouletteEffectType.Failure);
+        if (replacement == null) return false;
+
+        for (int i = 0; i < appliedSlots.Length; i++)
+        {
+            if (appliedSlots[i] == null || appliedSlots[i].Effect != RouletteEffectType.Success) continue;
+            appliedSlots[i] = replacement;
+            ApplySlotVisual(i, replacement);
+            monsterGreenToRedConversions++;
+            return true;
+        }
+
+        return false;
+    }
+
+    private void ApplyMonsterSlotConversions()
+    {
+        for (int conversion = 0; conversion < monsterGreenToRedConversions; conversion++)
+            ReplaceFirstSuccessSlot(RouletteEffectType.Failure);
     }
 
     private void ApplyChanceMutations()

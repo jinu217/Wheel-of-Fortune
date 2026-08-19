@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public enum RouletteActionType
@@ -11,18 +10,6 @@ public enum RouletteActionType
 
 public class BattleManager : MonoBehaviour
 {
-    private readonly struct PendingRouletteResult
-    {
-        public RouletteActionType ActionType { get; }
-        public RouletteSpinResult Result { get; }
-
-        public PendingRouletteResult(RouletteActionType actionType, RouletteSpinResult result)
-        {
-            ActionType = actionType;
-            Result = result;
-        }
-    }
-
     [Tooltip("전투에 참여하는 플레이어의 능력치 관리자입니다. 전투 씬에서 자동 연결할 수 있습니다.")]
     [SerializeField] private PlayerStatManager playerStats;
     [Tooltip("플레이어 턴의 공격·방어 룰렛을 실행할 컴포넌트입니다.")]
@@ -33,7 +20,6 @@ public class BattleManager : MonoBehaviour
     [Min(0f)] [SerializeField] private float monsterActionDisplaySeconds = 3f;
 
     private bool isResolvingRoulette;
-    private readonly List<PendingRouletteResult> pendingRouletteResults = new List<PendingRouletteResult>();
     private int skippedMonsterTurns;
     private int battleGoldMultiplier = 1;
     private PlayerAbilityManager abilities;
@@ -59,6 +45,14 @@ public class BattleManager : MonoBehaviour
     public event Action<RouletteActionType, RouletteSpinResult> PlayerRouletteResolved;
     public event Action<RouletteActionType, RouletteSpinResult> SpecialRouletteTriggered;
     public event Action<MonsterActionType> MonsterTurnResolved;
+    public event Action PlayerAttackExecuted;
+    public event Action PlayerDefenseExecuted;
+    public event Action PlayerHit;
+
+    public void NotifyMonsterAttack()
+    {
+        PlayerHit?.Invoke();
+    }
     public event Action<bool> BattleFinished;
 
     public void SetPlayerStats(PlayerStatManager stats)
@@ -79,11 +73,17 @@ public class BattleManager : MonoBehaviour
         playerStats.DamageTaken -= HandlePlayerDamageTaken;
         playerStats.DamageTaken += HandlePlayerDamageTaken;
         playerStats.ResetBattleState();
+        roulette.ResetMonsterSlotChanges();
         skippedMonsterTurns = 0;
         battleGoldMultiplier = 1;
         firstAttackRouletteResolved = false;
         SuppressPostBattleRewards = false;
         BeginPlayerTurn();
+    }
+
+    public bool ConvertOneGreenToRedByMonster()
+    {
+        return roulette != null && roulette.ConvertOneGreenToRedByMonster();
     }
 
     public bool SpinAttackRoulette()
@@ -175,7 +175,6 @@ public class BattleManager : MonoBehaviour
     private void ResolvePlayerRoulette(RouletteActionType actionType, RouletteSpinResult result)
     {
         isResolvingRoulette = false;
-        pendingRouletteResults.Add(new PendingRouletteResult(actionType, result));
         rouletteSpinsThisTurn++;
 
         if (abilities != null && result.EffectData != null)
@@ -211,6 +210,20 @@ public class BattleManager : MonoBehaviour
 
         PlayerRouletteResolved?.Invoke(actionType, result);
 
+        if (actionType == RouletteActionType.Attack && IsSuccessfulAction(result))
+            PlayerAttackExecuted?.Invoke();
+        else if (actionType == RouletteActionType.Defense && IsSuccessfulAction(result))
+            PlayerDefenseExecuted?.Invoke();
+
+        // 각 코인의 룰렛이 끝나는 즉시 해당 공격·방어·기타 효과를 실행합니다.
+        ApplyBattleRouletteEffect(actionType, result, false);
+
+        if (monster.IsDead)
+        {
+            CompleteVictory();
+            return;
+        }
+
         if (playerStats.AttackRouletteCoins <= 0 && playerStats.DefenseRouletteCoins <= 0)
         {
             ResolveCompletedPlayerTurn();
@@ -219,13 +232,6 @@ public class BattleManager : MonoBehaviour
 
     private void ResolveCompletedPlayerTurn()
     {
-        foreach (PendingRouletteResult pending in pendingRouletteResults)
-        {
-            ApplyBattleRouletteEffect(pending.ActionType, pending.Result, false);
-        }
-
-        pendingRouletteResults.Clear();
-
         if (abilities != null)
         {
             if (playerStats.Barrier <= 0 && abilities.Has(PassiveAbilityType.NoBarrierEndTurn5)) playerStats.AddBarrier(5);
@@ -241,9 +247,17 @@ public class BattleManager : MonoBehaviour
         StartCoroutine(ExecuteMonsterTurnRoutine());
     }
 
+    private static bool IsSuccessfulAction(RouletteSpinResult result)
+    {
+        if (result.EffectData == null) return false;
+        RouletteEffectType effect = result.EffectData.Effect;
+        return effect == RouletteEffectType.Success
+            || effect == RouletteEffectType.GreatSuccess
+            || effect == RouletteEffectType.ExtraSpin;
+    }
+
     private void BeginPlayerTurn()
     {
-        pendingRouletteResults.Clear();
         rouletteSpinsThisTurn = 0;
         playerStats.ResetBattleRouletteCoins();
         CurrentTurn = BattleTurn.Player;
@@ -396,7 +410,6 @@ public class BattleManager : MonoBehaviour
             if (abilities.Has(PassiveAbilityType.BattleEndHeal10)) playerStats.Heal(10);
             if (abilities.Has(PassiveAbilityType.BattleEndGold5)) playerStats.AddCoins(5);
         }
-        pendingRouletteResults.Clear();
         CurrentTurn = BattleTurn.None;
         TurnChanged?.Invoke(CurrentTurn);
         BattleFinished?.Invoke(playerWon);

@@ -83,7 +83,7 @@ public class ChanceEventUI : MonoBehaviour
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         }
 
-        TMP_FontAsset font = FindNeodgmFont();
+        TMP_FontAsset font = FindRidibatangFont();
         warningPanel = CreateObject("Chance Panel", canvas.transform, typeof(Image));
         RectTransform panelRect = warningPanel.GetComponent<RectTransform>();
         panelRect.anchorMin = Vector2.zero;
@@ -111,11 +111,11 @@ public class ChanceEventUI : MonoBehaviour
         warningPanel.SetActive(false);
     }
 
-    private static TMP_FontAsset FindNeodgmFont()
+    private static TMP_FontAsset FindRidibatangFont()
     {
         TMP_Text[] texts = FindObjectsByType<TMP_Text>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         foreach (TMP_Text text in texts)
-            if (text.font != null && text.font.name.IndexOf("neodgm", StringComparison.OrdinalIgnoreCase) >= 0)
+            if (text.font != null && text.font.name.IndexOf("RIDIBatang", StringComparison.OrdinalIgnoreCase) >= 0)
                 return text.font;
         return null;
     }

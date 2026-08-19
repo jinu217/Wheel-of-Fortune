@@ -26,14 +26,10 @@ public class InGameEventNode : MonoBehaviour, IPointerEnterHandler, IPointerExit
     [SerializeField] private MonsterData monsterData;
     [Tooltip("보스 이벤트에서 등장할 보스 데이터입니다.")]
     [SerializeField] private BossData bossData;
-    [Tooltip("랜덤 이벤트 세부 종류입니다. 현재는 클릭 시 20% 확률로 자동 추첨합니다.")]
-    [SerializeField] private RandomEventType randomEventType;
     [Tooltip("이 이벤트 노드를 클릭하는 UI 버튼입니다.")]
     [SerializeField] private Button button;
     [Tooltip("이 이벤트를 완료한 뒤 이동할 수 있는 다음 노드 목록입니다.")]
     [SerializeField] private List<InGameEventNode> nextNodes = new List<InGameEventNode>();
-    [Tooltip("이벤트 종류를 표시할 아이콘 Image입니다.")]
-    [SerializeField] private Image eventIcon;
 
     private InGameProgressionManager progressionManager;
     private Coroutine scaleRoutine;
@@ -43,7 +39,6 @@ public class InGameEventNode : MonoBehaviour, IPointerEnterHandler, IPointerExit
     public InGameEventType EventType => eventType;
     public MonsterData MonsterData => monsterData;
     public BossData BossData => bossData;
-    public RandomEventType RandomEventType => randomEventType;
     public IReadOnlyList<InGameEventNode> NextNodes => nextNodes;
     public int ConsecutiveTypeCount { get; private set; } = 1;
     public bool IsCompleted { get; private set; }
@@ -83,10 +78,9 @@ public class InGameEventNode : MonoBehaviour, IPointerEnterHandler, IPointerExit
         ConsecutiveTypeCount = 1;
     }
 
-    public void SetRuntimeUI(Button nodeButton, Image iconImage)
+    public void SetRuntimeUI(Button nodeButton)
     {
         button = nodeButton;
-        eventIcon = iconImage;
     }
 
     public void SetAnimationSettings(float hover, float pressed, float duration)

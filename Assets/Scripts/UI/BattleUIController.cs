@@ -37,6 +37,10 @@ public class BattleUIController : MonoBehaviour
     [SerializeField] private Sprite defenseCoinImage;
     [Tooltip("공격 코인부터 방어 코인 순서로 모든 룰렛 코인 이미지가 배치될 하나의 부모입니다.")]
     [SerializeField] private RectTransform rouletteCoinContainer;
+    [Tooltip("화면에 표시되는 룰렛 코인 이미지 한 개의 가로·세로 크기입니다.")]
+    [SerializeField] private Vector2 rouletteCoinImageSize = new Vector2(64f, 64f);
+    [Tooltip("룰렛 코인 이미지 중심 사이의 가로 간격입니다.")]
+    [Min(0f)] [SerializeField] private float rouletteCoinSpacing = 72f;
     [Tooltip("최대 3개의 소모품 이미지를 표시할 인벤토리 슬롯입니다.")]
     [SerializeField] private Image[] inventorySlotImages = new Image[3];
 
@@ -124,7 +128,7 @@ public class BattleUIController : MonoBehaviour
         if (playerHpText != null)
         {
             playerHpText.gameObject.SetActive(true);
-            playerHpText.text = $"HP {playerStats.CurrentHp} / {playerStats.MaxHp}";
+            playerHpText.text = $"{playerStats.CurrentHp} / {playerStats.MaxHp}";
         }
 
         if (playerHpSlider != null)
@@ -220,16 +224,6 @@ public class BattleUIController : MonoBehaviour
     {
         Transform root = transform;
         TMP_FontAsset font = turnText == null ? null : turnText.font;
-
-        if (playerHpText != null)
-        {
-            SetRuntimeRect(playerHpText.rectTransform, new Vector2(-300f, 105f), new Vector2(400f, 45f));
-        }
-
-        if (monsterHpText != null)
-        {
-            SetRuntimeRect(monsterHpText.rectTransform, new Vector2(300f, 105f), new Vector2(400f, 45f));
-        }
 
         if (monsterBarrierText == null)
         {
@@ -344,7 +338,11 @@ public class BattleUIController : MonoBehaviour
             image.color = image.sprite != null ? Color.white
                 : isAttackCoin ? new Color(0.82f, 0.22f, 0.18f, 1f) : new Color(0.2f, 0.45f, 0.9f, 1f);
             image.preserveAspect = true;
-            SetRuntimeRect(image.rectTransform, new Vector2((i - (totalCount - 1) * 0.5f) * 38f, 0f), new Vector2(32f, 32f));
+            RectTransform coinRect = image.rectTransform;
+            coinRect.anchorMin = coinRect.anchorMax = new Vector2(0f, 1f);
+            coinRect.pivot = new Vector2(0f, 1f);
+            coinRect.anchoredPosition = new Vector2(i * rouletteCoinSpacing, 0f);
+            coinRect.sizeDelta = rouletteCoinImageSize;
         }
     }
 
@@ -367,7 +365,7 @@ public class BattleUIController : MonoBehaviour
     {
         if (monsterHpText != null && monster.Data != null)
         {
-            monsterHpText.text = $"HP {hp} / {monster.Data.Hp}";
+            monsterHpText.text = $"{hp} / {monster.Data.Hp}";
         }
 
         if (monsterBarrierText != null && monster.Data != null)

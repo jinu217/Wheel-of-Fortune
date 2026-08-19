@@ -1,1 +1,1 @@
-Obsolete battle demo UI removed.
+Obsolete battle UI removed.

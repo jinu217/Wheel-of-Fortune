@@ -40,3 +40,55 @@ MonoBehaviour:
   bossMonsters:
   - {fileID: 11400000, guid: fdac579018710db439f812f2a11aa29b, type: 2}
   mimicMonster: {fileID: 11400000, guid: 519465e4ddf062647ac4bc730516b862, type: 2}
+  floorSpawnTables:
+  - minimumFloor: 1
+    maximumFloor: 2
+    monsters:
+    - monster: {fileID: 11400000, guid: f134b4631e73b96469ebba8e7b64b8d4, type: 2}
+      weight: 50
+    - monster: {fileID: 11400000, guid: 4616161c632d871429e82b513bf8623f, type: 2}
+      weight: 40
+    - monster: {fileID: 11400000, guid: 5a95589e2e969c449b04d44b63ba2765, type: 2}
+      weight: 10
+  - minimumFloor: 3
+    maximumFloor: 4
+    monsters:
+    - monster: {fileID: 11400000, guid: f134b4631e73b96469ebba8e7b64b8d4, type: 2}
+      weight: 10
+    - monster: {fileID: 11400000, guid: 4616161c632d871429e82b513bf8623f, type: 2}
+      weight: 10
+    - monster: {fileID: 11400000, guid: 5a95589e2e969c449b04d44b63ba2765, type: 2}
+      weight: 20
+    - monster: {fileID: 11400000, guid: c9053b35c7fb4a148ad7ea54278a429b, type: 2}
+      weight: 30
+    - monster: {fileID: 11400000, guid: 989a67f21c4af5842a48be696620c0e2, type: 2}
+      weight: 30
+  - minimumFloor: 5
+    maximumFloor: 6
+    monsters:
+    - monster: {fileID: 11400000, guid: c9053b35c7fb4a148ad7ea54278a429b, type: 2}
+      weight: 20
+    - monster: {fileID: 11400000, guid: 989a67f21c4af5842a48be696620c0e2, type: 2}
+      weight: 20
+    - monster: {fileID: 11400000, guid: cc059ae8a0151654b8587c6703b8a166, type: 2}
+      weight: 40
+    - monster: {fileID: 11400000, guid: 74c99edbc8039fc4899fcda7f68865b2, type: 2}
+      weight: 20
+  - minimumFloor: 7
+    maximumFloor: 8
+    monsters:
+    - monster: {fileID: 11400000, guid: 27f98f6d0621c4c4c80aca14db985a00, type: 2}
+      weight: 50
+    - monster: {fileID: 11400000, guid: b4868ae490958d646b84c0d67af142c4, type: 2}
+      weight: 30
+    - monster: {fileID: 11400000, guid: 74c99edbc8039fc4899fcda7f68865b2, type: 2}
+      weight: 20
+  - minimumFloor: 9
+    maximumFloor: 10
+    monsters:
+    - monster: {fileID: 11400000, guid: 32152c1acc005bb4fb65b3aeb56e1147, type: 2}
+      weight: 40
+    - monster: {fileID: 11400000, guid: a4e1cccc63825dd4d903f0bb43b0d84b, type: 2}
+      weight: 40
+    - monster: {fileID: 11400000, guid: b4868ae490958d646b84c0d67af142c4, type: 2}
+      weight: 20

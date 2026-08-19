@@ -127,6 +127,7 @@ public class MonsterController : MonoBehaviour
         switch (action)
         {
             case MonsterActionType.Attack:
+                battleManager?.NotifyMonsterAttack();
                 if (!playerStats.TryConsumeDodge()) playerStats.TakeDamage(Attack);
                 break;
             case MonsterActionType.Defense:
@@ -206,6 +207,25 @@ public class MonsterController : MonoBehaviour
                 int amount = UnityEngine.Random.Range(1, 7);
                 attackBonus += amount;
                 defenseBonus += amount;
+                break;
+            case SkillEffectType.AttackByBarrier:
+                battleManager?.NotifyMonsterAttack();
+                if (!playerStats.TryConsumeDodge()) playerStats.TakeDamage(barrier);
+                break;
+            case SkillEffectType.RestAndHeal5:
+                currentHp = Mathf.Min(data.Hp, currentHp + 5);
+                HpChanged?.Invoke(currentHp);
+                break;
+            case SkillEffectType.StealPlayerBarrier:
+                AddBarrier(playerStats.TakeAllBarrier());
+                break;
+            case SkillEffectType.Barrier3AndReducePlayerAttack1:
+                AddBarrier(3);
+                playerStats.AddBattleStatModifier(-1, 0);
+                break;
+            case SkillEffectType.GreenToRedOrTake30Damage:
+                if (battleManager == null || !battleManager.ConvertOneGreenToRedByMonster())
+                    TakeDirectDamage(30);
                 break;
         }
     }

@@ -13,18 +13,18 @@ MonoBehaviour:
   m_Name: Monster2
   m_EditorClassIdentifier: Assembly-CSharp::MonsterData
   monsterName: "\uB179\uC544\uBC84\uB9B0 \uC601\uD63C"
-  monsterImage: {fileID: 0}
+  monsterImage: {fileID: 5675857372675088757, guid: 198d8f43829e0e241997eed95cdf7041, type: 3}
   hp: 10
   atk: 3
   def: 0
   coin: 10
-  atkImage: {fileID: 0}
-  defImage: {fileID: 0}
+  atkImage: {fileID: 21300000, guid: d8a05aa6bd96e2f499fdaa48f00d4c70, type: 3}
+  defImage: {fileID: 8920735953785130164, guid: 6ba9c81397a67354c9879a493cb890b4, type: 3}
   skillData: {fileID: 11400000, guid: 98b583081de64aaa890421960e97db98, type: 2}
   skill1Id: 40c31115-f3ca-429e-95f4-eb2501e077f5
-  skill1Image: {fileID: 0}
+  skill1Image: {fileID: -1741007838025643578, guid: 67df86f8970d8424e9ca1fb2bf604228, type: 3}
   skill2Id: 
-  skill2Image: {fileID: 0}
+  skill2Image: {fileID: -1741007838025643578, guid: 67df86f8970d8424e9ca1fb2bf604228, type: 3}
   actionPattern1: 0
   actionPattern2: 0
   actionPattern3: 2

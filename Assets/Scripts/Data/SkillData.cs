@@ -50,7 +50,12 @@ public enum SkillEffectType
     RestOneTurn,
     ChargeBarrier5,
     ChargeOverload,
-    RandomAttackDefenseUp
+    RandomAttackDefenseUp,
+    AttackByBarrier,
+    RestAndHeal5,
+    StealPlayerBarrier,
+    Barrier3AndReducePlayerAttack1,
+    GreenToRedOrTake30Damage
 }
 
 [CreateAssetMenu(fileName = "Skill Data", menuName = "Game Data/Skill Data")]

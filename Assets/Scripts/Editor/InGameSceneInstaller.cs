@@ -130,7 +130,7 @@ public static class InGameSceneInstaller
         Image thornItem = CreateImage(thorn.transform, "Acquired Item Image", new Vector2(0, -40), new Vector2(180, 180));
         Button thornConfirm = CreateButton(thorn.transform, "Confirm Image", "확인", font, new Vector2(0, -360), new Vector2(300, 90));
 
-        Set(panelSerialized, "treasurePanel", treasure); Set(panelSerialized, "treasureChestButton", chestButton); Set(panelSerialized, "treasureDescriptionText", treasureText);
+        Set(panelSerialized, "treasurePanel", treasure); Set(panelSerialized, "treasureChestButton", chestButton); Set(panelSerialized, "treasureChestImage", chestButton.targetGraphic as Image); Set(panelSerialized, "treasureDescriptionText", treasureText);
         Set(panelSerialized, "shamanPanel", shaman); Set(panelSerialized, "shamanPurchaseButton", shamanButton); Set(panelSerialized, "shamanDescriptionText", shamanText);
         Set(panelSerialized, "causalityPanel", causality); Set(panelSerialized, "causalityDeleteButton", deleteButton); Set(panelSerialized, "causalityGainButton", gainButton);
         Set(panelSerialized, "causalityChoiceContainer", choiceContainer); Set(panelSerialized, "causalityChoiceButtonTemplate", choiceTemplate);
@@ -151,6 +151,7 @@ public static class InGameSceneInstaller
         if (catalog == null) return;
         SerializedObject catalogSerialized = new SerializedObject(catalog);
         SerializedProperty viewsProperty = catalogSerialized.FindProperty("itemViews");
+        SerializedProperty purchaseImagesProperty = catalogSerialized.FindProperty("purchaseCompletedImages");
         bool complete = viewsProperty != null && viewsProperty.arraySize == 3;
         if (complete)
         {
@@ -174,6 +175,7 @@ public static class InGameSceneInstaller
         TMP_Text sceneText = FindInScene<TMP_Text>(scene);
         TMP_FontAsset font = sceneText == null ? null : sceneText.font;
         viewsProperty.arraySize = 3;
+        purchaseImagesProperty.arraySize = 3;
         for (int i = 0; i < 3; i++)
         {
             GameObject card = new GameObject($"Shop Item {i + 1}", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(ShopItemView));
@@ -188,6 +190,11 @@ public static class InGameSceneInstaller
                 new Vector2(0f, -65f), new Vector2(250f, 125f), 24f);
             TMP_Text price = CreateText(card.transform, "Price Text", string.Empty, font,
                 new Vector2(0f, -165f), new Vector2(250f, 50f), 24f);
+            Image purchaseCompletedImage = CreateImage(card.transform, $"Purchase Completed Image {i + 1}",
+                new Vector2(0f, 90f), new Vector2(150f, 150f));
+            purchaseCompletedImage.raycastTarget = false;
+            purchaseCompletedImage.preserveAspect = true;
+            purchaseCompletedImage.gameObject.SetActive(false);
 
             ShopItemView view = card.GetComponent<ShopItemView>();
             SerializedObject viewSerialized = new SerializedObject(view);
@@ -196,6 +203,7 @@ public static class InGameSceneInstaller
             Set(viewSerialized, "priceText", price);
             viewSerialized.ApplyModifiedPropertiesWithoutUndo();
             viewsProperty.GetArrayElementAtIndex(i).objectReferenceValue = view;
+            purchaseImagesProperty.GetArrayElementAtIndex(i).objectReferenceValue = purchaseCompletedImage;
             EditorUtility.SetDirty(view);
         }
         catalogSerialized.ApplyModifiedPropertiesWithoutUndo();

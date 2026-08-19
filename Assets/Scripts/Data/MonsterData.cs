@@ -77,6 +77,7 @@ public class MonsterData : ScriptableObject
     [SerializeField] private MonsterActionType actionPattern5 = MonsterActionType.None;
 
     public Sprite MonsterImage => monsterImage;
+    public string MonsterName => monsterName;
     public int Hp => hp;
     public int Atk => atk;
     public int Def => def;

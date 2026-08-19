@@ -6,6 +6,8 @@ public class ShopCatalogUI : MonoBehaviour
 {
     [Tooltip("표시할 상품 목록을 제공하는 상점 관리자입니다.")] [SerializeField] private ShopManager shopManager;
     [Tooltip("상점에 고정 배치된 아이템 UI 오브젝트 3개입니다.")] [SerializeField] private ShopItemView[] itemViews = new ShopItemView[3];
+    [Tooltip("각 상품 구매 완료 시 아이템 위에 표시할 이미지 3개입니다. 상품 순서대로 연결합니다.")]
+    [SerializeField] private Image[] purchaseCompletedImages = new Image[3];
     [Tooltip("플레이어가 현재 보유한 골드를 표시할 텍스트입니다.")] [SerializeField] private TMP_Text ownedGoldText;
     [Tooltip("상점을 닫고 여관을 여는 나가기 버튼입니다.")] [SerializeField] private Button exitButton;
     [Tooltip("상점 종료 후 여관을 열 흐름 관리자입니다.")] [SerializeField] private ShopInnFlowController flowController;
@@ -42,7 +44,10 @@ public class ShopCatalogUI : MonoBehaviour
             if (!hasProduct) continue;
             int productIndex = shopManager.DisplayedProductIndexes[slot];
             ItemData item = shopManager.Products[productIndex];
-            if (item != null) view.Bind(shopManager, item, productIndex);
+            Image completedImage = purchaseCompletedImages != null && slot < purchaseCompletedImages.Length
+                ? purchaseCompletedImages[slot]
+                : null;
+            if (item != null) view.Bind(shopManager, item, productIndex, completedImage);
         }
     }
 

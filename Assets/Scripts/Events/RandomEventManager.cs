@@ -11,18 +11,10 @@ public enum RandomEventType
     ThornBush
 }
 
-public enum CausalityChoice
+public enum TreasureChestResult
 {
-    TwoAbilitiesAndChance,
-    OneRandomAbility
-}
-
-[Serializable]
-public struct RandomAbility
-{
-    [Tooltip("랜덤 능력의 표시 이름입니다.")] public string abilityName;
-    [Tooltip("랜덤 능력이 증가시킬 플레이어 능력치입니다.")] public StatType statType;
-    [Tooltip("랜덤 능력으로 증가하는 수치입니다.")] public int value;
+    Gold,
+    Mimic
 }
 
 public class RandomEventManager : MonoBehaviour
@@ -32,7 +24,6 @@ public class RandomEventManager : MonoBehaviour
     [Tooltip("보물상자 미믹을 포함한 전체 몬스터 데이터베이스입니다.")]
     [SerializeField] private MonsterDatabase monsterDatabase;
     [Tooltip("가시 덤불에서 아이템을 추첨할 전체 아이템 데이터베이스입니다.")] [SerializeField] private ItemDatabase itemDatabase;
-    [Tooltip("주술사와 인과율의 신전에서 얻을 수 있는 능력 목록입니다.")] [SerializeField] private List<RandomAbility> randomAbilities = new List<RandomAbility>();
 
     [Header("Treasure Chest")]
     [Tooltip("보물상자에서 미믹이 나오지 않았을 때 얻는 골드입니다.")] [Min(0)] [SerializeField] private int treasureGold = 50;
@@ -47,9 +38,8 @@ public class RandomEventManager : MonoBehaviour
     public event Action<RandomEventType> RandomEventCompleted;
     public event Action<RandomEventType> RandomEventSelected;
     public event Action<MonsterData> MimicEncountered;
-    public event Action CausalityChanceTriggered;
-
-    private ItemDatabase Database => itemDatabase;
+    public bool CanAffordShaman => playerStats != null && playerStats.Coin >= shamanPrice;
+    public int ShamanPrice => shamanPrice;
 
     public RandomEventType SelectRandomEvent()
     {
@@ -65,45 +55,53 @@ public class RandomEventManager : MonoBehaviour
         inventory = playerInventory;
     }
 
-    public void OpenTreasureChest()
+    public TreasureChestResult OpenTreasureChest()
     {
         MonsterData mimicMonster = monsterDatabase == null ? null : monsterDatabase.MimicMonster;
         if (UnityEngine.Random.value < mimicChance && mimicMonster != null)
         {
-            MimicEncountered?.Invoke(mimicMonster);
-            return;
+            return TreasureChestResult.Mimic;
         }
 
         playerStats.AddCoins(treasureGold);
         RandomEventCompleted?.Invoke(RandomEventType.TreasureChest);
+        return TreasureChestResult.Gold;
     }
 
-    public bool TryUseShaman()
+    public void StartMimicEncounter()
     {
-        if (!CanGrantAbility() || !playerStats.TrySpendCoins(shamanPrice))
+        MonsterData mimicMonster = monsterDatabase == null ? null : monsterDatabase.MimicMonster;
+        if (mimicMonster == null)
+        {
+            Debug.LogError("몬스터 데이터베이스에 미믹 데이터가 없습니다.", this);
+            return;
+        }
+
+        MimicEncountered?.Invoke(mimicMonster);
+    }
+
+    public bool TryUseShaman(int floorNumber, out AbilityDefinition acquiredAbility)
+    {
+        acquiredAbility = null;
+        PlayerAbilityManager abilities = GameSessionManager.Instance == null
+            ? null
+            : GameSessionManager.Instance.PlayerAbilities;
+        if (playerStats == null || abilities == null) return false;
+
+        List<AbilityDefinition> choices = abilities.GenerateChoices(floorNumber, 1);
+        if (choices.Count == 0 || !playerStats.TrySpendCoins(shamanPrice))
         {
             return false;
         }
 
-        GrantRandomAbility();
-        RandomEventCompleted?.Invoke(RandomEventType.Shaman);
+        acquiredAbility = choices[0];
+        abilities.Acquire(acquiredAbility);
         return true;
     }
 
-    public void UseCausalityShrine(CausalityChoice choice)
+    public void CompleteShaman()
     {
-        if (choice == CausalityChoice.TwoAbilitiesAndChance)
-        {
-            GrantRandomAbility();
-            GrantRandomAbility();
-            CausalityChanceTriggered?.Invoke();
-        }
-        else
-        {
-            GrantRandomAbility();
-        }
-
-        RandomEventCompleted?.Invoke(RandomEventType.CausalityShrine);
+        RandomEventCompleted?.Invoke(RandomEventType.Shaman);
     }
 
     public void CompleteCausalityShrine()
@@ -117,32 +115,16 @@ public class RandomEventManager : MonoBehaviour
         RandomEventCompleted?.Invoke(RandomEventType.LifeSpring);
     }
 
-    public bool EnterThornBush()
+    public ItemData EnterThornBush()
     {
         playerStats.TakeDamage(thornDamage);
-        bool added = false;
-        if (inventory != null && !inventory.IsFull && Database != null && Database.Count > 0)
+        ItemData acquiredItem = null;
+        if (inventory != null && !inventory.IsFull && itemDatabase != null && itemDatabase.Count > 0)
         {
-            ItemData item = Database.GetRandomItem();
-            added = inventory.TryAddItem(item);
+            ItemData item = itemDatabase.GetRandomItem();
+            if (inventory.TryAddItem(item)) acquiredItem = item;
         }
         RandomEventCompleted?.Invoke(RandomEventType.ThornBush);
-        return added;
-    }
-
-    private bool CanGrantAbility()
-    {
-        return playerStats != null && randomAbilities.Count > 0;
-    }
-
-    private void GrantRandomAbility()
-    {
-        if (!CanGrantAbility())
-        {
-            return;
-        }
-
-        RandomAbility ability = randomAbilities[UnityEngine.Random.Range(0, randomAbilities.Count)];
-        playerStats.AddPermanentStat(ability.statType, ability.value);
+        return acquiredItem;
     }
 }

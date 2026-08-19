@@ -58,8 +58,12 @@ public class BossData : ScriptableObject
     [Tooltip("1페이즈 세 번째 행동입니다.")] [SerializeField] private BossActionType phase1Action3;
     [Tooltip("1페이즈 네 번째 행동입니다. None이면 앞 행동만 반복합니다.")] [SerializeField] private BossActionType phase1Action4 = BossActionType.None;
     [Tooltip("1페이즈 다섯 번째 행동입니다. None이면 앞 행동만 반복합니다.")] [SerializeField] private BossActionType phase1Action5 = BossActionType.None;
+    [Tooltip("1페이즈 여섯 번째 행동입니다. None이면 앞 행동만 반복합니다.")] [SerializeField] private BossActionType phase1Action6 = BossActionType.None;
+    [Tooltip("1페이즈 일곱 번째 행동입니다. None이면 앞 행동만 반복합니다.")] [SerializeField] private BossActionType phase1Action7 = BossActionType.None;
 
     [Header("2페이즈 정보")]
+    [Tooltip("2페이즈가 시작될 때 교체하여 표시할 보스 이미지입니다.")]
+    [SerializeField] private Sprite phase2BossImage;
     [Tooltip("현재 HP가 이 수치 이하가 되면 2페이즈를 시작합니다.")]
     [Min(0)] [SerializeField] private int phase2StartHp;
     [Tooltip("2페이즈에서 사용할 기본 공격력입니다.")]
@@ -101,25 +105,26 @@ public class BossData : ScriptableObject
     public SkillInfo Skill3 => GetSkill(skill3Id);
     public Sprite Skill3Image => skill3Image;
     public int Phase2StartHp => phase2StartHp;
+    public Sprite Phase2BossImage => phase2BossImage;
     public int Phase2Atk => phase2Atk;
     public int Phase2Def => phase2Def;
     public SkillInfo Skill4 => GetSkill(skill4Id);
     public Sprite Skill4Image => skill4Image;
     public SkillInfo Skill5 => GetSkill(skill5Id);
     public Sprite Skill5Image => skill5Image;
-    public int Phase1PatternCount => GetPatternCount(phase1Action4, phase1Action5);
+    public int Phase1PatternCount => GetPhase1PatternCount();
     public int Phase2PatternCount => GetPatternCount(phase2Action4, phase2Action5);
 
     public BossActionType GetPhase1Action(int index)
     {
         return GetPatternAction(index, Phase1PatternCount, phase1Action1, phase1Action2,
-            phase1Action3, phase1Action4, phase1Action5);
+            phase1Action3, phase1Action4, phase1Action5, phase1Action6, phase1Action7);
     }
 
     public BossActionType GetPhase2Action(int index)
     {
         return GetPatternAction(index, Phase2PatternCount, phase2Action1, phase2Action2,
-            phase2Action3, phase2Action4, phase2Action5);
+            phase2Action3, phase2Action4, phase2Action5, BossActionType.None, BossActionType.None);
     }
 
     private SkillInfo GetSkill(string id) => skillData == null ? null : skillData.GetSkill(id);
@@ -129,8 +134,17 @@ public class BossData : ScriptableObject
         return fourth == BossActionType.None ? 3 : fifth == BossActionType.None ? 4 : 5;
     }
 
+    private int GetPhase1PatternCount()
+    {
+        if (phase1Action4 == BossActionType.None) return 3;
+        if (phase1Action5 == BossActionType.None) return 4;
+        if (phase1Action6 == BossActionType.None) return 5;
+        return phase1Action7 == BossActionType.None ? 6 : 7;
+    }
+
     private static BossActionType GetPatternAction(int index, int count, BossActionType first,
-        BossActionType second, BossActionType third, BossActionType fourth, BossActionType fifth)
+        BossActionType second, BossActionType third, BossActionType fourth, BossActionType fifth,
+        BossActionType sixth, BossActionType seventh)
     {
         switch (Mathf.Abs(index) % count)
         {
@@ -138,7 +152,9 @@ public class BossData : ScriptableObject
             case 1: return second;
             case 2: return third;
             case 3: return fourth;
-            default: return fifth;
+            case 4: return fifth;
+            case 5: return sixth;
+            default: return seventh;
         }
     }
 }

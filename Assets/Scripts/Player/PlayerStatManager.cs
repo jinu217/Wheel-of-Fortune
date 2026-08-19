@@ -115,6 +115,14 @@ public class PlayerStatManager : MonoBehaviour
         StatsChanged?.Invoke();
     }
 
+    public int TakeAllBarrier()
+    {
+        int taken = barrier;
+        barrier = 0;
+        StatsChanged?.Invoke();
+        return taken;
+    }
+
     public void ResetBattleState()
     {
         battleAttackModifier = 0;
@@ -150,8 +158,10 @@ public class PlayerStatManager : MonoBehaviour
         switch (statType)
         {
             case StatType.MaxHp:
+                int previousMaxHp = MaxHp;
                 maxHp = Mathf.Max(1, maxHp + amount);
-                currentHp = Mathf.Min(currentHp, MaxHp);
+                int increasedMaxHp = Mathf.Max(0, MaxHp - previousMaxHp);
+                currentHp = Mathf.Clamp(currentHp + increasedMaxHp, 0, MaxHp);
                 break;
             case StatType.Attack:
                 attack = Mathf.Max(0, attack + amount);

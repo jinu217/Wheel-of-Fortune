@@ -9,7 +9,7 @@ using UnityEngine.UI;
 [DefaultExecutionOrder(-200)]
 public class InGameSceneController : MonoBehaviour
 {
-    [Tooltip("데모의 일반 전투, 보스, 미믹을 선택할 몬스터 데이터베이스입니다.")]
+    [Tooltip("일반 전투, 보스, 미믹을 선택할 몬스터 데이터베이스입니다.")]
     [SerializeField] private MonsterDatabase monsterDatabase;
 
     private const int MapWidth = 4;
@@ -309,7 +309,7 @@ public class InGameSceneController : MonoBehaviour
         button.colors = colors;
 
         InGameEventNode node = nodeObject.AddComponent<InGameEventNode>();
-        node.SetRuntimeUI(button, image);
+        node.SetRuntimeUI(button);
         node.SetAnimationSettings(nodeHoverScale, nodePressedScale, nodeScaleAnimationDuration);
         System.Random monsterRandom = new System.Random(GameSessionManager.Instance.GetOrCreateMapSeed()
             ^ position.x * 397 ^ position.y * 7919);
@@ -317,7 +317,11 @@ public class InGameSceneController : MonoBehaviour
             node.ConfigureBoss(position, monsterDatabase?.GetRandomBoss(monsterRandom));
         else
             node.Configure(position, type, type == InGameEventType.Battle
-                ? monsterDatabase?.GetRandomRegular(monsterRandom) : null);
+                ? monsterDatabase?.GetFloorWeightedRegular(
+                    position.y + 1,
+                    GameSessionManager.Instance.EncounteredMonsters,
+                    monsterRandom)
+                : null);
 
         return node;
     }

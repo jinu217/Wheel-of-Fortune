@@ -7,15 +7,21 @@ public class ShopItemView : MonoBehaviour
     [Tooltip("클릭해서 구매하는 아이템 이미지입니다.")] [SerializeField] private Image itemImage;
     [Tooltip("아이템 이름과 효과를 이름 줄바꿈 효과 형식으로 표시합니다.")] [SerializeField] private TMP_Text itemDescriptionText;
     [Tooltip("상품 가격을 표시할 텍스트입니다.")] [SerializeField] private TMP_Text priceText;
+    private Image purchaseCompletedImage;
     private ShopManager shopManager;
     private int productIndex;
     private Button buyButton;
 
-    public void Bind(ShopManager manager, ItemData item, int index)
+    public void Bind(ShopManager manager, ItemData item, int index, Image completedImage)
     {
         shopManager = manager;
         productIndex = index;
-        EnsureRuntimeUI();
+        purchaseCompletedImage = completedImage;
+        if (itemImage == null || itemDescriptionText == null || priceText == null)
+        {
+            Debug.LogError("ShopItemView의 이미지와 텍스트 참조가 인스펙터에 연결되지 않았습니다.", this);
+            return;
+        }
         buyButton = itemImage == null ? null : itemImage.GetComponent<Button>();
         if (itemImage != null) buyButton ??= itemImage.gameObject.AddComponent<Button>();
         if (buyButton != null) buyButton.targetGraphic = itemImage;
@@ -51,44 +57,8 @@ public class ShopItemView : MonoBehaviour
             buyButton.transition = Selectable.Transition.None;
             buyButton.interactable = !manager.IsSoldOut(index);
         }
-    }
-
-    private void EnsureRuntimeUI()
-    {
-        TMP_FontAsset font = FindFirstObjectByType<TMP_Text>(FindObjectsInactive.Include)?.font;
-        if (itemImage == null)
-        {
-            itemImage = CreateImage("Item Image", new Vector2(0f, 90f), new Vector2(150f, 150f));
-        }
-        if (itemDescriptionText == null) itemDescriptionText = CreateText("Item Description", font, new Vector2(0f, -65f), new Vector2(250f, 125f), 24f);
-        if (priceText == null) priceText = CreateText("Price", font, new Vector2(0f, -155f), new Vector2(250f, 50f), 24f);
-    }
-
-    private Image CreateImage(string objectName, Vector2 position, Vector2 size)
-    {
-        GameObject child = new GameObject(objectName, typeof(RectTransform), typeof(Image));
-        child.transform.SetParent(transform, false);
-        RectTransform rect = child.GetComponent<RectTransform>();
-        rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
-        rect.anchoredPosition = position;
-        rect.sizeDelta = size;
-        return child.GetComponent<Image>();
-    }
-
-    private TMP_Text CreateText(string objectName, TMP_FontAsset font, Vector2 position, Vector2 size, float fontSize)
-    {
-        GameObject child = new GameObject(objectName, typeof(RectTransform), typeof(TextMeshProUGUI));
-        child.transform.SetParent(transform, false);
-        RectTransform rect = child.GetComponent<RectTransform>();
-        rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
-        rect.anchoredPosition = position;
-        rect.sizeDelta = size;
-        TMP_Text text = child.GetComponent<TMP_Text>();
-        text.font = font;
-        text.fontSize = fontSize;
-        text.alignment = TextAlignmentOptions.Center;
-        text.color = Color.white;
-        return text;
+        if (purchaseCompletedImage != null)
+            purchaseCompletedImage.gameObject.SetActive(manager.IsSoldOut(index));
     }
 
     private static string GetEffectDescription(ItemData item)
@@ -116,6 +86,8 @@ public class ShopItemView : MonoBehaviour
         if (shopManager.TryBuy(productIndex) && buyButton != null)
         {
             buyButton.interactable = false;
+            if (purchaseCompletedImage != null)
+                purchaseCompletedImage.gameObject.SetActive(true);
         }
     }
 

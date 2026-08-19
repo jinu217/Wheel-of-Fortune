@@ -43,11 +43,26 @@ public class SkillDropdownDrawer : PropertyDrawer
         }
 
         int currentIndex = ids.IndexOf(property.stringValue);
-        currentIndex = Mathf.Max(0, currentIndex);
+        if (currentIndex < 0 && !string.IsNullOrEmpty(property.stringValue))
+        {
+            // SkillData 목록에서 찾지 못한 기존 ID도 보존합니다. 컴파일 후 인스펙터가
+            // 다시 그려지는 것만으로 값이 None으로 덮어써지는 것을 방지합니다.
+            names.Add($"Missing Skill ({property.stringValue})");
+            ids.Add(property.stringValue);
+            currentIndex = ids.Count - 1;
+        }
+        else
+        {
+            currentIndex = Mathf.Max(0, currentIndex);
+        }
 
         EditorGUI.BeginProperty(position, label, property);
+        EditorGUI.BeginChangeCheck();
         int selectedIndex = EditorGUI.Popup(position, label.text, currentIndex, names.ToArray());
-        property.stringValue = ids[selectedIndex];
+        if (EditorGUI.EndChangeCheck())
+        {
+            property.stringValue = ids[selectedIndex];
+        }
         EditorGUI.EndProperty();
     }
 }
