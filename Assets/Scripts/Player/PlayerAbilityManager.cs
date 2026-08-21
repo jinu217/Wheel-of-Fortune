@@ -158,7 +158,7 @@ public class PlayerAbilityManager : MonoBehaviour
         Add(PassiveAbilityType.NonGreenHeal2, AbilityGrade.Small, "색다른 치유", "초록색이 아니면 체력 2 회복");
         Add(PassiveAbilityType.BattleEndGold5, AbilityGrade.Small, "잔돈 수집", "전투 종료 시 골드 +5");
         Add(PassiveAbilityType.CheapInn, AbilityGrade.Small, "여관 단골", "휴식 0골드, 만찬 5골드");
-        Add(PassiveAbilityType.ChanceGrantsAbility, AbilityGrade.Small, "우연의 선물", "우연 발생 시 능력 1개 획득");
+        Add(PassiveAbilityType.ChanceGrantsAbility, AbilityGrade.Small, "우연의 선물", "우연 발생 후 능력 선택지에서 1개 추가 획득");
         Add(PassiveAbilityType.Attack3, AbilityGrade.Moderate, "단단한 힘", "영구적으로 공격력 +3");
         Add(PassiveAbilityType.Defense2, AbilityGrade.Moderate, "단단한 수호", "영구적으로 방어력 +2");
         Add(PassiveAbilityType.MaxHp10, AbilityGrade.Moderate, "튼튼한 생명", "영구적으로 최대 체력 +10");

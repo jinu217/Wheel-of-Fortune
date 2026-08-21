@@ -26,13 +26,20 @@ public class BattleSceneController : MonoBehaviour
     [Min(0f)] [SerializeField] private float returnDelaySeconds = 1f;
     [Tooltip("전투 종료 후 돌아갈 인게임 씬 이름입니다.")]
     [SerializeField] private string inGameSceneName = "InGameScene";
+    [Tooltip("활성화하면 일반 MonsterData가 아니라 전달받은 BossData만 사용합니다.")]
+    [SerializeField] private bool useBossData;
 
     private void Start()
     {
         GameSessionManager session = GameSessionManager.Instance;
-        if (session == null || session.SelectedMonster == null)
+        bool missingBattleData = session == null
+            || useBossData && session.SelectedBoss == null
+            || !useBossData && session.SelectedMonster == null;
+        if (missingBattleData)
         {
-            Debug.LogError("No battle data exists in GameSessionManager.", this);
+            Debug.LogError(useBossData
+                ? "BossBattleScene에 전달된 BossData가 없습니다."
+                : "MonsterBattleScene에 전달된 MonsterData가 없습니다.", this);
             SceneManager.LoadScene(inGameSceneName);
             return;
         }
@@ -50,7 +57,8 @@ public class BattleSceneController : MonoBehaviour
         ConfigureDefeatPanel();
         battleManager.TurnChanged += HandleTurnChanged;
         battleManager.BattleFinished += HandleBattleFinished;
-        battleManager.BeginBattle(session.SelectedMonster);
+        if (useBossData) battleManager.BeginBattle(session.SelectedBoss);
+        else battleManager.BeginBattle(session.SelectedMonster);
     }
 
     private void OnDestroy()
@@ -171,7 +179,21 @@ public class BattleSceneController : MonoBehaviour
         chanceEventUI ??= gameObject.AddComponent<ChanceEventUI>();
         yield return StartCoroutine(chanceEventUI.ShowAndApplyRoutine(
             chanceSystem, choices, selected, floor,
-            LoadInGameScene));
+            HandleChanceCompleted));
+    }
+
+    private void HandleChanceCompleted()
+    {
+        PlayerAbilityManager abilities = GameSessionManager.Instance == null
+            ? null : GameSessionManager.Instance.PlayerAbilities;
+        if (abilities != null && abilities.Has(PassiveAbilityType.ChanceGrantsAbility))
+        {
+            chanceEventUI?.Hide();
+            rewardSelectionUI?.SetSelectionEnabled(true);
+            return;
+        }
+
+        LoadInGameScene();
     }
 
     private void ShowRewardSelection(bool allowSelection)

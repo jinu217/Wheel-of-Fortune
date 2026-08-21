@@ -81,6 +81,27 @@ public class BattleManager : MonoBehaviour
         BeginPlayerTurn();
     }
 
+    public void BeginBattle(BossData bossData)
+    {
+        if (playerStats == null || roulette == null || monster == null || bossData == null)
+        {
+            Debug.LogError("BattleManager 보스 전투 참조가 연결되지 않았습니다.", this);
+            return;
+        }
+
+        monster.Initialize(bossData);
+        abilities = GameSessionManager.Instance == null ? null : GameSessionManager.Instance.PlayerAbilities;
+        playerStats.DamageTaken -= HandlePlayerDamageTaken;
+        playerStats.DamageTaken += HandlePlayerDamageTaken;
+        playerStats.ResetBattleState();
+        roulette.ResetMonsterSlotChanges();
+        skippedMonsterTurns = 0;
+        battleGoldMultiplier = 1;
+        firstAttackRouletteResolved = false;
+        SuppressPostBattleRewards = false;
+        BeginPlayerTurn();
+    }
+
     public bool ConvertOneGreenToRedByMonster()
     {
         return roulette != null && roulette.ConvertOneGreenToRedByMonster();
@@ -419,7 +440,7 @@ public class BattleManager : MonoBehaviour
     {
         SuppressPostBattleRewards = monster != null && monster.SuppressVictoryRewards;
         if (!SuppressPostBattleRewards)
-            playerStats.AddCoins(monster.Data.Coin * battleGoldMultiplier);
+            playerStats.AddCoins(monster.RewardCoin * battleGoldMultiplier);
         FinishBattle(true);
     }
 

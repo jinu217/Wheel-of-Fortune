@@ -3,16 +3,21 @@ using UnityEngine;
 
 public enum MonsterActionType
 {
-    Attack,
-    Defense,
-    Skill1,
-    Skill2,
-    None
+    Attack = 0,
+    Defense = 1,
+    Skill1 = 2,
+    Skill2 = 3,
+    // 기존 MonsterData 에셋의 직렬화 값 4를 반드시 유지해야 합니다.
+    None = 4,
+    Skill3 = 5,
+    Skill4 = 6,
+    Skill5 = 7
 }
 
 public class MonsterController : MonoBehaviour
 {
     private MonsterData data;
+    private BossData bossData;
     private int currentHp;
     private int attackBonus;
     private int defenseBonus;
@@ -25,11 +30,19 @@ public class MonsterController : MonoBehaviour
     private bool suppressVictoryRewards;
     private float receivedDamageMultiplier = 1f;
     private int nextPatternIndex;
+    private bool isBossPhase2;
 
     public MonsterData Data => data;
+    public BossData BossData => bossData;
+    public bool HasCombatData => data != null || bossData != null;
+    public bool IsBoss => bossData != null;
     public int CurrentHp => currentHp;
-    public int Attack => data == null ? 0 : data.Atk + attackBonus;
-    public int Defense => data == null ? 0 : data.Def + defenseBonus;
+    public int MaxHp => data != null ? data.Hp : bossData == null ? 0 : bossData.Hp;
+    public int Attack => BaseAttack + attackBonus;
+    public int Defense => BaseDefense + defenseBonus;
+    public int RewardCoin => data == null ? 0 : data.Coin;
+    public Sprite DisplayImage => data != null ? data.MonsterImage : bossData == null ? null
+        : isBossPhase2 && bossData.Phase2BossImage != null ? bossData.Phase2BossImage : bossData.BossImage;
     public int Barrier => barrier;
     public MonsterActionType NextAction => nextAction;
     public bool HasNextAction => hasNextAction;
@@ -43,11 +56,25 @@ public class MonsterController : MonoBehaviour
     public void Initialize(MonsterData monsterData)
     {
         data = monsterData;
-        currentHp = data == null ? 0 : data.Hp;
+        bossData = null;
+        InitializeCombatState(data == null ? 0 : data.Hp);
+    }
+
+    public void Initialize(BossData selectedBossData)
+    {
+        data = null;
+        bossData = selectedBossData;
+        InitializeCombatState(bossData == null ? 0 : bossData.Hp);
+    }
+
+    private void InitializeCombatState(int hp)
+    {
+        currentHp = hp;
         attackBonus = 0;
         defenseBonus = 0;
         barrier = 0;
-        hasNextAction = data != null;
+        isBossPhase2 = false;
+        hasNextAction = HasCombatData;
         hasPreviousAction = false;
         punishPlayerFailure = false;
         suppressVictoryRewards = false;
@@ -58,13 +85,20 @@ public class MonsterController : MonoBehaviour
         NextActionChanged?.Invoke();
     }
 
+    private int BaseAttack => data != null ? data.Atk : bossData == null ? 0
+        : isBossPhase2 ? bossData.Phase2Atk : bossData.Atk;
+    private int BaseDefense => data != null ? data.Def : bossData == null ? 0
+        : isBossPhase2 ? bossData.Phase2Def : bossData.Def;
+
     public int TakeDamage(int rawDamage)
     {
-        int damage = Mathf.CeilToInt(Mathf.Max(0, rawDamage - Defense) * receivedDamageMultiplier);
+        // 방어력은 방어 행동으로 획득하는 베리어의 기준일 뿐 피해를 직접 줄이지 않습니다.
+        int damage = Mathf.CeilToInt(Mathf.Max(0, rawDamage) * receivedDamageMultiplier);
         int absorbed = Mathf.Min(barrier, damage);
         barrier -= absorbed;
         damage -= absorbed;
         currentHp = Mathf.Max(0, currentHp - damage);
+        UpdateBossPhase();
         HpChanged?.Invoke(currentHp);
         return damage;
     }
@@ -80,7 +114,7 @@ public class MonsterController : MonoBehaviour
             hasPreviousAction = true;
         }
 
-        hasNextAction = data != null;
+        hasNextAction = HasCombatData;
         if (hasNextAction) nextAction = CreateNextAction();
         ActionExecuted?.Invoke(selected);
         NextActionChanged?.Invoke();
@@ -91,15 +125,20 @@ public class MonsterController : MonoBehaviour
     {
         int applied = Mathf.CeilToInt(Mathf.Max(0, damage) * receivedDamageMultiplier);
         currentHp = Mathf.Max(0, currentHp - applied);
+        UpdateBossPhase();
         HpChanged?.Invoke(currentHp);
         return applied;
     }
 
     private MonsterActionType CreateNextAction()
     {
-        if (data == null) return MonsterActionType.Attack;
-        MonsterActionType selected = data.GetActionPattern(nextPatternIndex);
-        nextPatternIndex = (nextPatternIndex + 1) % data.ActionPatternCount;
+        if (!HasCombatData) return MonsterActionType.Attack;
+        int patternCount = data != null ? data.ActionPatternCount
+            : isBossPhase2 ? bossData.Phase2PatternCount : bossData.Phase1PatternCount;
+        MonsterActionType selected = data != null ? data.GetActionPattern(nextPatternIndex)
+            : ConvertBossAction(isBossPhase2 ? bossData.GetPhase2Action(nextPatternIndex)
+                : bossData.GetPhase1Action(nextPatternIndex));
+        nextPatternIndex = (nextPatternIndex + 1) % Mathf.Max(1, patternCount);
         return selected;
     }
 
@@ -117,8 +156,19 @@ public class MonsterController : MonoBehaviour
 
     private SkillInfo GetSkill(MonsterActionType action)
     {
-        return action == MonsterActionType.Skill1 ? data.Skill1
-            : action == MonsterActionType.Skill2 ? data.Skill2 : null;
+        if (data != null)
+            return action == MonsterActionType.Skill1 ? data.Skill1
+                : action == MonsterActionType.Skill2 ? data.Skill2 : null;
+        if (bossData == null) return null;
+        switch (action)
+        {
+            case MonsterActionType.Skill1: return bossData.Skill1;
+            case MonsterActionType.Skill2: return bossData.Skill2;
+            case MonsterActionType.Skill3: return bossData.Skill3;
+            case MonsterActionType.Skill4: return bossData.Skill4;
+            case MonsterActionType.Skill5: return bossData.Skill5;
+            default: return null;
+        }
     }
 
     private void ExecuteAction(MonsterActionType action, SkillInfo skill, PlayerStatManager playerStats,
@@ -135,6 +185,9 @@ public class MonsterController : MonoBehaviour
                 break;
             case MonsterActionType.Skill1:
             case MonsterActionType.Skill2:
+            case MonsterActionType.Skill3:
+            case MonsterActionType.Skill4:
+            case MonsterActionType.Skill5:
                 ExecuteSkill(skill, playerStats, battleManager);
                 break;
         }
@@ -149,7 +202,7 @@ public class MonsterController : MonoBehaviour
                 playerStats.TakeDamage(skill.EffectValue);
                 break;
             case SkillEffectType.Heal:
-                currentHp = Mathf.Min(data.Hp, currentHp + Mathf.Max(0, skill.EffectValue));
+                currentHp = Mathf.Min(MaxHp, currentHp + Mathf.Max(0, skill.EffectValue));
                 HpChanged?.Invoke(currentHp);
                 break;
             case SkillEffectType.AttackBuff:
@@ -173,7 +226,7 @@ public class MonsterController : MonoBehaviour
                 break;
             case SkillEffectType.MonsterAttackUp2DefenseDown1:
                 attackBonus += 2;
-                defenseBonus = Mathf.Max(-data.Def, defenseBonus - 1);
+                defenseBonus = Mathf.Max(-BaseDefense, defenseBonus - 1);
                 break;
             case SkillEffectType.HeavyAttackAndStealGold:
                 playerStats.TakeDamage(10);
@@ -213,7 +266,7 @@ public class MonsterController : MonoBehaviour
                 if (!playerStats.TryConsumeDodge()) playerStats.TakeDamage(barrier);
                 break;
             case SkillEffectType.RestAndHeal5:
-                currentHp = Mathf.Min(data.Hp, currentHp + 5);
+                currentHp = Mathf.Min(MaxHp, currentHp + 5);
                 HpChanged?.Invoke(currentHp);
                 break;
             case SkillEffectType.StealPlayerBarrier:
@@ -234,5 +287,57 @@ public class MonsterController : MonoBehaviour
     {
         barrier += Mathf.Max(0, amount);
         HpChanged?.Invoke(currentHp);
+    }
+
+    public Sprite GetActionImage(MonsterActionType action)
+    {
+        if (data != null)
+        {
+            switch (action)
+            {
+                case MonsterActionType.Attack: return data.AtkImage;
+                case MonsterActionType.Defense: return data.DefImage;
+                case MonsterActionType.Skill1: return data.Skill1Image;
+                case MonsterActionType.Skill2: return data.Skill2Image;
+                default: return null;
+            }
+        }
+        if (bossData == null) return null;
+        switch (action)
+        {
+            case MonsterActionType.Attack: return bossData.AtkImage;
+            case MonsterActionType.Defense: return bossData.DefImage;
+            case MonsterActionType.Skill1: return bossData.Skill1Image;
+            case MonsterActionType.Skill2: return bossData.Skill2Image;
+            case MonsterActionType.Skill3: return bossData.Skill3Image;
+            case MonsterActionType.Skill4: return bossData.Skill4Image;
+            case MonsterActionType.Skill5: return bossData.Skill5Image;
+            default: return null;
+        }
+    }
+
+    private void UpdateBossPhase()
+    {
+        if (bossData == null || isBossPhase2 || currentHp > bossData.Phase2StartHp) return;
+        isBossPhase2 = true;
+        nextPatternIndex = 0;
+        hasNextAction = true;
+        nextAction = CreateNextAction();
+        NextActionChanged?.Invoke();
+    }
+
+    private static MonsterActionType ConvertBossAction(BossActionType action)
+    {
+        switch (action)
+        {
+            case BossActionType.Attack: return MonsterActionType.Attack;
+            case BossActionType.Defense: return MonsterActionType.Defense;
+            case BossActionType.Skill1: return MonsterActionType.Skill1;
+            case BossActionType.Skill2: return MonsterActionType.Skill2;
+            case BossActionType.Skill3: return MonsterActionType.Skill3;
+            case BossActionType.Skill4: return MonsterActionType.Skill4;
+            case BossActionType.Skill5: return MonsterActionType.Skill5;
+            default: return MonsterActionType.None;
+        }
     }
 }

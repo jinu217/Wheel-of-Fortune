@@ -16,7 +16,7 @@ public class ChanceEventUI : MonoBehaviour
     [Tooltip("자동 추첨 후보의 효과 설명만 표시할 텍스트 3개입니다.")]
     [SerializeField] private TMP_Text[] choiceTexts = new TMP_Text[ChoiceCount];
     [Tooltip("후보 3개를 보여준 뒤 자동 선택하기까지 기다리는 시간입니다.")]
-    [Min(0f)] [SerializeField] private float selectionDelay = 1.5f;
+    [Min(0f)] [SerializeField] private float selectionDelay = 1f;
     [Tooltip("우연이 자동 선택된 뒤 인게임 씬으로 이동하기 전까지 결과를 보여주는 시간입니다.")]
     [Min(0f)] [SerializeField] private float resultDelay = 3f;
 
@@ -35,6 +35,11 @@ public class ChanceEventUI : MonoBehaviour
         yield return ShowRoutine(system, choices, selected, floorNumber, onCompleted);
     }
 
+    public void Hide()
+    {
+        if (warningPanel != null) warningPanel.SetActive(false);
+    }
+
     private IEnumerator ShowRoutine(ChanceSystemManager system, List<ChanceEffectDefinition> choices,
         ChanceEffectDefinition selected, int floorNumber, Action onCompleted)
     {
@@ -46,9 +51,13 @@ public class ChanceEventUI : MonoBehaviour
             choiceImages[i].gameObject.SetActive(valid);
             if (!valid) continue;
             choiceImages[i].color = new Color(0.16f, 0.18f, 0.24f, 1f);
+            choiceImages[i].raycastTarget = false;
+            Button existingButton = choiceImages[i].GetComponent<Button>();
+            if (existingButton != null) existingButton.interactable = false;
             choiceTexts[i].text = choices[i].Description;
+            choiceTexts[i].color = Color.white;
+            choiceTexts[i].raycastTarget = false;
         }
-
         if (selectionDelay > 0f) yield return new WaitForSeconds(selectionDelay);
         for (int i = 0; i < choices.Count && i < ChoiceCount; i++)
         {

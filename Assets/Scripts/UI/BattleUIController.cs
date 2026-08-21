@@ -102,11 +102,11 @@ public class BattleUIController : MonoBehaviour
 
     private void RefreshAll()
     {
-        if (monster != null && monster.Data != null)
+        if (monster != null && monster.HasCombatData)
         {
             if (monsterImage != null)
             {
-                monsterImage.sprite = monster.Data.MonsterImage;
+                monsterImage.sprite = monster.DisplayImage;
             }
 
             HandleMonsterHpChanged(monster.CurrentHp);
@@ -363,25 +363,25 @@ public class BattleUIController : MonoBehaviour
 
     private void HandleMonsterHpChanged(int hp)
     {
-        if (monsterHpText != null && monster.Data != null)
+        if (monsterHpText != null && monster.HasCombatData)
         {
-            monsterHpText.text = $"{hp} / {monster.Data.Hp}";
+            monsterHpText.text = $"{hp} / {monster.MaxHp}";
         }
 
-        if (monsterBarrierText != null && monster.Data != null)
+        if (monsterBarrierText != null && monster.HasCombatData)
         {
             monsterBarrierText.text = $"{monster.Barrier}";
         }
 
-        if (monsterHpSlider != null && monster.Data != null)
+        if (monsterHpSlider != null && monster.HasCombatData)
         {
-            monsterHpSlider.maxValue = Mathf.Max(1, monster.Data.Hp);
+            monsterHpSlider.maxValue = Mathf.Max(1, monster.MaxHp);
             monsterHpSlider.value = hp;
         }
 
-        if (monsterImage != null && monster.Data != null)
+        if (monsterImage != null && monster.HasCombatData)
         {
-            monsterImage.sprite = monster.Data.MonsterImage;
+            monsterImage.sprite = monster.DisplayImage;
         }
     }
 
@@ -416,7 +416,7 @@ public class BattleUIController : MonoBehaviour
 
     private void ShowMonsterAction(MonsterActionType action)
     {
-        if (monster == null || monster.Data == null)
+        if (monster == null || !monster.HasCombatData)
         {
             return;
         }
@@ -433,7 +433,7 @@ public class BattleUIController : MonoBehaviour
 
     private void RefreshActionPreview()
     {
-        if (monster == null || monster.Data == null || monsterActionImage == null) return;
+        if (monster == null || !monster.HasCombatData || monsterActionImage == null) return;
         monsterActionImage.color = Color.white;
         Sprite sprite = monster.HasNextAction ? GetMonsterActionSprite(monster.NextAction) : null;
         monsterActionImage.sprite = sprite;
@@ -442,14 +442,7 @@ public class BattleUIController : MonoBehaviour
 
     private Sprite GetMonsterActionSprite(MonsterActionType action)
     {
-        switch (action)
-        {
-            case MonsterActionType.Attack: return monster.Data.AtkImage;
-            case MonsterActionType.Defense: return monster.Data.DefImage;
-            case MonsterActionType.Skill1: return monster.Data.Skill1Image;
-            case MonsterActionType.Skill2: return monster.Data.Skill2Image;
-            default: return null;
-        }
+        return monster.GetActionImage(action);
     }
 
     private void HandleRouletteResolved(RouletteActionType action, RouletteSpinResult result)

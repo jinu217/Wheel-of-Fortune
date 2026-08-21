@@ -154,8 +154,6 @@ public class ChanceSystemManager : MonoBehaviour
                 break;
         }
 
-        if (abilities != null && abilities.Has(PassiveAbilityType.ChanceGrantsAbility))
-            abilities.AcquireRandomAbility(floorNumber);
     }
 
     public void ResetForNewRun()

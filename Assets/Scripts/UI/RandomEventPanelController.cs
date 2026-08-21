@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -25,13 +24,6 @@ public class RandomEventPanelController : MonoBehaviour
     [Tooltip("구매한 능력 이름과 설명을 화면에 표시하는 시간입니다.")]
     [Min(0f)] [SerializeField] private float shamanAbilityDisplaySeconds = 3f;
 
-    [Header("인과율의 신전")]
-    [Tooltip("인과율의 신전 전체 패널입니다.")] [SerializeField] private GameObject causalityPanel;
-    [Tooltip("우연과 능력을 삭제하는 왼쪽 이미지 버튼입니다.")] [SerializeField] private Button causalityDeleteButton;
-    [Tooltip("우연과 능력을 획득하는 오른쪽 이미지 버튼입니다.")] [SerializeField] private Button causalityGainButton;
-    [Tooltip("동적으로 생성되는 세부 선택지의 부모입니다.")] [SerializeField] private RectTransform causalityChoiceContainer;
-    [Tooltip("세부 선택지를 만들 때 복제할 비활성 버튼입니다.")] [SerializeField] private Button causalityChoiceButtonTemplate;
-
     [Header("생명의 샘")]
     [Tooltip("생명의 샘 전체 패널입니다.")] [SerializeField] private GameObject lifeSpringPanel;
     [Tooltip("생명의 샘 확인 버튼입니다.")] [SerializeField] private Button lifeSpringConfirmButton;
@@ -47,7 +39,6 @@ public class RandomEventPanelController : MonoBehaviour
     [Tooltip("가시 덤불 결과를 표시한 뒤 패널이 자동으로 닫히기까지의 시간입니다.")]
     [Min(0f)] [SerializeField] private float thornBushCloseDelay = 2f;
 
-    private readonly List<Button> generatedChoices = new List<Button>();
     private Sprite initialTreasureSprite;
     private Coroutine treasureResultRoutine;
     private Coroutine shamanResultRoutine;
@@ -74,8 +65,6 @@ public class RandomEventPanelController : MonoBehaviour
 
         Bind(treasureChestButton, OpenTreasure);
         Bind(shamanPurchaseButton, PurchaseShamanAbility);
-        Bind(causalityDeleteButton, ShowChanceRemovalChoices);
-        Bind(causalityGainButton, ShowAbilityGainChoices);
         Bind(lifeSpringConfirmButton, UseLifeSpring);
         Bind(thornBushConfirmButton, EnterThornBush);
 
@@ -115,7 +104,6 @@ public class RandomEventPanelController : MonoBehaviour
         {
             case RandomEventType.TreasureChest: return treasurePanel;
             case RandomEventType.Shaman: return shamanPanel;
-            case RandomEventType.CausalityShrine: return causalityPanel;
             case RandomEventType.LifeSpring: return lifeSpringPanel;
             case RandomEventType.ThornBush: return thornBushPanel;
             default: return null;
@@ -233,67 +221,6 @@ public class RandomEventPanelController : MonoBehaviour
         if (panel != null) panel.SetActive(false);
     }
 
-    private void ShowChanceRemovalChoices()
-    {
-        ClearChoices();
-        ChanceSystemManager chance = GameSessionManager.Instance.ChanceSystem;
-        var owned = new List<ChanceEffectType>(chance.AcquiredChanceEffects);
-        if (owned.Count == 0) { CreateChoice("삭제할 우연이 없습니다.", null); return; }
-        foreach (ChanceEffectType value in owned)
-        {
-            ChanceEffectType selected = value;
-            CreateChoice(chance.GetDefinition(value)?.Name ?? value.ToString(), () =>
-            {
-                chance.RemoveChanceEffect(selected);
-                GameSessionManager.Instance.PlayerAbilities.RemoveRandomAbility();
-                FinishCausality();
-            });
-        }
-    }
-
-    private void ShowAbilityGainChoices()
-    {
-        ClearChoices();
-        GameSessionManager session = GameSessionManager.Instance;
-        int floor = session.CurrentEventPosition.y + 1;
-        session.ChanceSystem.AcquireRandomChance(floor);
-        foreach (AbilityDefinition value in session.PlayerAbilities.GenerateChoices(floor, 3))
-        {
-            AbilityDefinition selected = value;
-            CreateChoice($"{value.Name}\n{value.Description}", () =>
-            {
-                session.PlayerAbilities.Acquire(selected);
-                FinishCausality();
-            });
-        }
-    }
-
-    private void CreateChoice(string label, UnityEngine.Events.UnityAction action)
-    {
-        if (causalityChoiceButtonTemplate == null || causalityChoiceContainer == null) return;
-        Button choice = Instantiate(causalityChoiceButtonTemplate, causalityChoiceContainer);
-        choice.gameObject.SetActive(true);
-        TMP_Text text = choice.GetComponentInChildren<TMP_Text>(true);
-        if (text != null) text.text = label;
-        choice.onClick.RemoveAllListeners();
-        choice.interactable = action != null;
-        if (action != null) choice.onClick.AddListener(action);
-        generatedChoices.Add(choice);
-    }
-
-    private void FinishCausality()
-    {
-        manager.CompleteCausalityShrine();
-        causalityPanel.SetActive(false);
-        ClearChoices();
-    }
-
-    private void ClearChoices()
-    {
-        foreach (Button choice in generatedChoices) if (choice != null) Destroy(choice.gameObject);
-        generatedChoices.Clear();
-    }
-
     private void RefreshThornItemImage(ItemData acquiredItem)
     {
         if (thornBushItemImage == null) return;
@@ -338,12 +265,9 @@ public class RandomEventPanelController : MonoBehaviour
 
     private void CloseAll()
     {
-        ClearChoices();
         if (treasurePanel != null) treasurePanel.SetActive(false);
         if (shamanPanel != null) shamanPanel.SetActive(false);
-        if (causalityPanel != null) causalityPanel.SetActive(false);
         if (lifeSpringPanel != null) lifeSpringPanel.SetActive(false);
         if (thornBushPanel != null) thornBushPanel.SetActive(false);
-        if (causalityChoiceButtonTemplate != null) causalityChoiceButtonTemplate.gameObject.SetActive(false);
     }
 }

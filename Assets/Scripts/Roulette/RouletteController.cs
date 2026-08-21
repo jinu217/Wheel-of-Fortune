@@ -30,6 +30,7 @@ public struct RouletteSpinResult
 public class RouletteController : MonoBehaviour
 {
     private const int SlotCount = 10;
+    private const float SpinDurationSeconds = 2f;
 
     [Header("10 slots arranged in a circle")]
     [Tooltip("원형으로 배치한 룰렛 칸 이미지 10개입니다.")]
@@ -63,10 +64,17 @@ public class RouletteController : MonoBehaviour
     [Header("Spin Animation")]
     [Tooltip("회전 애니메이션을 적용할 룰렛 UI Transform입니다.")]
     [SerializeField] private RectTransform wheelTransform;
-    [Tooltip("룰렛 회전 시간의 최소값(X)과 최대값(Y)입니다.")]
-    [SerializeField] private Vector2 spinDurationRange = new Vector2(2f, 4f);
     [Tooltip("룰렛의 가속과 감속 형태를 결정하는 애니메이션 곡선입니다.")]
     [SerializeField] private AnimationCurve spinCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+    [Header("결과 표시 이미지")]
+    [Tooltip("당첨된 룰렛 칸 위로 이동하여 표시할 UI Image입니다. 비어 있으면 실행 중 자동 생성합니다.")]
+    [SerializeField] private Image resultMarkerImage;
+    [Tooltip("룰렛이 멈춘 칸 위에 표시할 이미지입니다. 비어 있으면 반투명 강조 이미지로 표시합니다.")]
+    [SerializeField] private Sprite resultMarkerSprite;
+    [Tooltip("당첨 칸 표시 이미지의 색상입니다.")]
+    [SerializeField] private Color resultMarkerColor = new Color(1f, 0.85f, 0.2f, 0.45f);
+    [Tooltip("당첨 칸 표시 이미지의 크기 배율입니다.")]
+    [Min(0.1f)] [SerializeField] private float resultMarkerScale = 1.15f;
 
     private readonly RouletteEffectData[] appliedSlots = new RouletteEffectData[SlotCount];
     private bool restoreDefaultAfterSpin;
@@ -102,6 +110,7 @@ public class RouletteController : MonoBehaviour
 
     public bool Configure(IReadOnlyList<RouletteEffectCount> effectCounts)
     {
+        HideResultMarker();
         if (effectCounts == null || slotImages == null || slotImages.Length != SlotCount)
         {
             return false;
@@ -335,24 +344,25 @@ public class RouletteController : MonoBehaviour
 
         RestoreDefaultConfigurationIfNeeded();
 
+        ShowResultMarker();
         ResultSelected?.Invoke(selectedIndex, result, value);
         return new RouletteSpinResult(selectedIndex, result, value);
     }
 
     private IEnumerator SpinRoutine(bool applyToPlayer, Action<RouletteSpinResult> onCompleted)
     {
+        ShowResultMarker();
         IsSpinning = true;
         int selectedIndex = UnityEngine.Random.Range(0, SlotCount);
         RouletteEffectData effect = appliedSlots[selectedIndex];
         int value = effect == null ? 0 : effect.RollValue();
-        float duration = UnityEngine.Random.Range(
-            Mathf.Min(spinDurationRange.x, spinDurationRange.y),
-            Mathf.Max(spinDurationRange.x, spinDurationRange.y));
+        float duration = SpinDurationSeconds;
 
         if (wheelTransform != null)
         {
-            float startAngle = wheelTransform.eulerAngles.z;
-            float targetAngle = startAngle - 360f * 5f - selectedIndex * (360f / SlotCount);
+            float startAngle = wheelTransform.localEulerAngles.z;
+            float clockwiseOffset = GetClockwiseOffsetToMarker(selectedIndex);
+            float targetAngle = startAngle - 360f * 5f + clockwiseOffset;
             float elapsed = 0f;
 
             while (elapsed < duration)
@@ -378,9 +388,62 @@ public class RouletteController : MonoBehaviour
 
         RouletteSpinResult result = new RouletteSpinResult(selectedIndex, effect, value);
         RestoreDefaultConfigurationIfNeeded();
+        ShowResultMarker();
         ResultSelected?.Invoke(selectedIndex, effect, value);
         IsSpinning = false;
         onCompleted?.Invoke(result);
+    }
+
+    private void ShowResultMarker()
+    {
+        EnsureResultMarker();
+        if (resultMarkerImage == null) return;
+        if (wheelTransform != null && resultMarkerImage.transform.IsChildOf(wheelTransform))
+            resultMarkerImage.transform.SetParent(wheelTransform.parent, true);
+        resultMarkerImage.rectTransform.localScale = Vector3.one * resultMarkerScale;
+        if (resultMarkerSprite != null)
+            resultMarkerImage.sprite = resultMarkerSprite;
+        resultMarkerImage.color = resultMarkerColor;
+        resultMarkerImage.gameObject.SetActive(true);
+    }
+
+    private float GetClockwiseOffsetToMarker(int selectedIndex)
+    {
+        if (wheelTransform == null || resultMarkerImage == null || slotImages == null
+            || selectedIndex < 0 || selectedIndex >= slotImages.Length || slotImages[selectedIndex] == null)
+            return -selectedIndex * (360f / SlotCount);
+
+        Vector2 center = wheelTransform.position;
+        Vector2 slotDirection = (Vector2)slotImages[selectedIndex].transform.position - center;
+        Vector2 markerDirection = (Vector2)resultMarkerImage.transform.position - center;
+        if (slotDirection.sqrMagnitude < 0.001f || markerDirection.sqrMagnitude < 0.001f)
+            return -selectedIndex * (360f / SlotCount);
+
+        float slotAngle = Mathf.Atan2(slotDirection.y, slotDirection.x) * Mathf.Rad2Deg;
+        float markerAngle = Mathf.Atan2(markerDirection.y, markerDirection.x) * Mathf.Rad2Deg;
+        return -Mathf.Repeat(slotAngle - markerAngle, 360f);
+    }
+
+    private void EnsureResultMarker()
+    {
+        if (resultMarkerImage != null) return;
+        GameObject marker = new GameObject("Roulette Result Marker", typeof(RectTransform),
+            typeof(CanvasRenderer), typeof(Image));
+        resultMarkerImage = marker.GetComponent<Image>();
+        resultMarkerImage.raycastTarget = false;
+        RectTransform markerRect = resultMarkerImage.rectTransform;
+        Transform markerParent = wheelTransform == null ? transform : wheelTransform.parent;
+        markerRect.SetParent(markerParent, false);
+        markerRect.anchorMin = markerRect.anchorMax = new Vector2(0.5f, 0.5f);
+        float radius = wheelTransform == null ? 250f : wheelTransform.rect.height * 0.5f;
+        markerRect.anchoredPosition = new Vector2(0f, radius);
+        markerRect.sizeDelta = new Vector2(80f, 80f);
+        marker.SetActive(false);
+    }
+
+    private void HideResultMarker()
+    {
+        if (resultMarkerImage != null) resultMarkerImage.gameObject.SetActive(false);
     }
 
     private void RestoreDefaultConfigurationIfNeeded()

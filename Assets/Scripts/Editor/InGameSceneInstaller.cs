@@ -106,19 +106,6 @@ public static class InGameSceneInstaller
         TMP_Text shamanText = CreateText(shaman.transform, "Description", "20골드를 지불하고 무작위 능력을 얻습니다.", font, new Vector2(0, 270), new Vector2(800, 120), 30);
         Button shamanButton = CreateButton(shaman.transform, "Purchase Image", "20골드 - 능력 획득", font, Vector2.zero, new Vector2(500, 180));
 
-        GameObject causality = CreatePanel(root.transform, "Causality Shrine Panel", new Color(0.05f, 0.08f, 0.16f, 0.98f));
-        CreateText(causality.transform, "Title", "인과율의 신전", font, new Vector2(0, 480), new Vector2(800, 90), 48);
-        Button deleteButton = CreateButton(causality.transform, "Delete Choice Image", "우연 1개 선택 후 삭제\n+ 무작위 능력 1개 삭제", font, new Vector2(-260, 100), new Vector2(440, 430));
-        Button gainButton = CreateButton(causality.transform, "Gain Choice Image", "우연 1개 무작위 획득\n+ 능력 1개 선택", font, new Vector2(260, 100), new Vector2(440, 430));
-        GameObject choiceContainerObject = new GameObject("Detail Choice Container", typeof(RectTransform), typeof(HorizontalLayoutGroup));
-        choiceContainerObject.transform.SetParent(causality.transform, false);
-        RectTransform choiceContainer = choiceContainerObject.GetComponent<RectTransform>();
-        SetRect(choiceContainer, new Vector2(0, -340), new Vector2(1000, 220));
-        HorizontalLayoutGroup layout = choiceContainerObject.GetComponent<HorizontalLayoutGroup>();
-        layout.childAlignment = TextAnchor.MiddleCenter; layout.spacing = 20f; layout.childForceExpandWidth = false; layout.childForceExpandHeight = false;
-        Button choiceTemplate = CreateButton(choiceContainer, "Choice Button Template", "선택지", font, Vector2.zero, new Vector2(300, 190));
-        choiceTemplate.gameObject.SetActive(false);
-
         GameObject spring = CreatePanel(root.transform, "Life Spring Panel", new Color(0.035f, 0.13f, 0.12f, 0.98f));
         CreateText(spring.transform, "Title", "생명의 샘", font, new Vector2(0, 430), new Vector2(800, 90), 48);
         TMP_Text springText = CreateText(spring.transform, "Description", "HP가 전부 회복됩니다.", font, new Vector2(0, 100), new Vector2(800, 260), 30);
@@ -132,13 +119,11 @@ public static class InGameSceneInstaller
 
         Set(panelSerialized, "treasurePanel", treasure); Set(panelSerialized, "treasureChestButton", chestButton); Set(panelSerialized, "treasureChestImage", chestButton.targetGraphic as Image); Set(panelSerialized, "treasureDescriptionText", treasureText);
         Set(panelSerialized, "shamanPanel", shaman); Set(panelSerialized, "shamanPurchaseButton", shamanButton); Set(panelSerialized, "shamanDescriptionText", shamanText);
-        Set(panelSerialized, "causalityPanel", causality); Set(panelSerialized, "causalityDeleteButton", deleteButton); Set(panelSerialized, "causalityGainButton", gainButton);
-        Set(panelSerialized, "causalityChoiceContainer", choiceContainer); Set(panelSerialized, "causalityChoiceButtonTemplate", choiceTemplate);
         Set(panelSerialized, "lifeSpringPanel", spring); Set(panelSerialized, "lifeSpringConfirmButton", springConfirm); Set(panelSerialized, "lifeSpringDescriptionText", springText);
         Set(panelSerialized, "thornBushPanel", thorn); Set(panelSerialized, "thornBushConfirmButton", thornConfirm); Set(panelSerialized, "thornBushDescriptionText", thornText); Set(panelSerialized, "thornBushItemImage", thornItem);
         panelSerialized.ApplyModifiedPropertiesWithoutUndo();
 
-        treasure.SetActive(false); shaman.SetActive(false); causality.SetActive(false); spring.SetActive(false); thorn.SetActive(false);
+        treasure.SetActive(false); shaman.SetActive(false); spring.SetActive(false); thorn.SetActive(false);
         controllerProperty.objectReferenceValue = panelController;
         controllerSerialized.ApplyModifiedPropertiesWithoutUndo();
         EditorUtility.SetDirty(panelController);

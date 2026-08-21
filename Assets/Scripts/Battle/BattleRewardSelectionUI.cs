@@ -143,12 +143,27 @@ public class BattleRewardSelectionUI : MonoBehaviour
         for (int i = 0; i < ChoiceCount; i++)
         {
             int index = i;
-            rewardButtons[i] = rewardImages[i].GetComponent<Button>();
-            if (rewardButtons[i] == null) rewardButtons[i] = rewardImages[i].gameObject.AddComponent<Button>();
+            GameObject choiceObject = FindChoiceObject(rewardImages[i], rewardTexts[i]);
+            rewardButtons[i] = choiceObject.GetComponent<Button>();
+            if (rewardButtons[i] == null) rewardButtons[i] = choiceObject.AddComponent<Button>();
             rewardButtons[i].onClick.RemoveAllListeners();
             rewardButtons[i].onClick.AddListener(() => SelectReward(index));
             rewardButtons[i].targetGraphic = rewardImages[i];
+            rewardImages[i].raycastTarget = true;
         }
+    }
+
+    private static GameObject FindChoiceObject(Image image, TMP_Text text)
+    {
+        if (image == null) return null;
+        Transform current = image.transform;
+        while (current != null)
+        {
+            if (text == null || text.transform == current || text.transform.IsChildOf(current))
+                return current.gameObject;
+            current = current.parent;
+        }
+        return image.gameObject;
     }
 
     private void BuildRewardPanel()

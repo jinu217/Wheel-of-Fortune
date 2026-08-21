@@ -103,8 +103,10 @@ public static class ShopInnSceneInstaller
         SetObjectReference(flow, "innManager", innManager);
 
         Button closeShop = CreateButton("Close Shop", shopPanel.transform, "상점 닫기", font, new Vector2(0f, -560f));
+        SetObjectReference(catalog, "exitButtonObject", closeShop.gameObject);
         UnityEventTools.AddPersistentListener(closeShop.onClick, flow.CloseShopAndOpenInn);
         Button closeInn = CreateButton("Close Inn", innPanel.transform, "여관 닫기", font, new Vector2(0f, -560f));
+        SetObjectReference(innPanelUI, "exitButtonObject", closeInn.gameObject);
         UnityEventTools.AddPersistentListener(closeInn.onClick, flow.CloseInn);
 
         shopPanel.SetActive(false);

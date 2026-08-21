@@ -9,8 +9,10 @@ public class ShopCatalogUI : MonoBehaviour
     [Tooltip("각 상품 구매 완료 시 아이템 위에 표시할 이미지 3개입니다. 상품 순서대로 연결합니다.")]
     [SerializeField] private Image[] purchaseCompletedImages = new Image[3];
     [Tooltip("플레이어가 현재 보유한 골드를 표시할 텍스트입니다.")] [SerializeField] private TMP_Text ownedGoldText;
-    [Tooltip("상점을 닫고 여관을 여는 나가기 버튼입니다.")] [SerializeField] private Button exitButton;
+    [Tooltip("이미지와 텍스트를 포함하며 상점을 닫고 여관을 여는 나가기 오브젝트입니다.")]
+    [SerializeField] private GameObject exitButtonObject;
     [Tooltip("상점 종료 후 여관을 열 흐름 관리자입니다.")] [SerializeField] private ShopInnFlowController flowController;
+    private Button exitButton;
 
     private void OnEnable()
     {
@@ -76,11 +78,17 @@ public class ShopCatalogUI : MonoBehaviour
     private void BindExitButton()
     {
         flowController ??= FindFirstObjectByType<ShopInnFlowController>();
-        if (exitButton == null)
+        if (exitButtonObject == null)
         {
             Transform found = transform.Find("Close Shop");
-            if (found != null) exitButton = found.GetComponent<Button>();
+            if (found != null) exitButtonObject = found.gameObject;
         }
+        if (exitButtonObject == null) return;
+        exitButton = exitButtonObject.GetComponent<Button>();
+        if (exitButton == null) exitButton = exitButtonObject.AddComponent<Button>();
+        Image targetImage = exitButtonObject.GetComponent<Image>();
+        if (targetImage == null) targetImage = exitButtonObject.GetComponentInChildren<Image>(true);
+        if (targetImage != null) exitButton.targetGraphic = targetImage;
         if (exitButton == null) return;
         exitButton.onClick.RemoveAllListeners();
         exitButton.onClick.AddListener(() => flowController?.CloseShopAndOpenInn());

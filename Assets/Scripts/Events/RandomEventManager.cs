@@ -6,7 +6,6 @@ public enum RandomEventType
 {
     TreasureChest,
     Shaman,
-    CausalityShrine,
     LifeSpring,
     ThornBush
 }
@@ -43,8 +42,8 @@ public class RandomEventManager : MonoBehaviour
 
     public RandomEventType SelectRandomEvent()
     {
-        // Five enum values: every value has exactly a 1/5 (20%) chance.
-        RandomEventType selected = (RandomEventType)UnityEngine.Random.Range(0, 5);
+        // Four enum values: every value has exactly a 1/4 (25%) chance.
+        RandomEventType selected = (RandomEventType)UnityEngine.Random.Range(0, 4);
         RandomEventSelected?.Invoke(selected);
         return selected;
     }
@@ -102,11 +101,6 @@ public class RandomEventManager : MonoBehaviour
     public void CompleteShaman()
     {
         RandomEventCompleted?.Invoke(RandomEventType.Shaman);
-    }
-
-    public void CompleteCausalityShrine()
-    {
-        RandomEventCompleted?.Invoke(RandomEventType.CausalityShrine);
     }
 
     public void UseLifeSpring()

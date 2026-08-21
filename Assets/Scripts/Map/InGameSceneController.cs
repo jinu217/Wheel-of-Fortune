@@ -36,7 +36,7 @@ public class InGameSceneController : MonoBehaviour
     [SerializeField] private MapMouseScroll mapMouseScroll;
     [Tooltip("플레이어의 현재 능력치와 골드를 표시할 텍스트입니다.")]
     [SerializeField] private TMP_Text statusText;
-    [Tooltip("보물상자, 주술사, 인과율의 신전, 생명의 샘, 가시 덤불 전용 패널을 관리합니다.")]
+    [Tooltip("보물상자, 주술사, 생명의 샘, 가시 덤불 전용 패널을 관리합니다.")]
     [SerializeField] private RandomEventPanelController randomEventPanelController;
 
     [Header("맵 선택지 표시")]

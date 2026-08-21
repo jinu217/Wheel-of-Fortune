@@ -18,14 +18,15 @@ public class InnPanelUI : MonoBehaviour
     [SerializeField] private Button[] priceButtons = new Button[ServiceCount];
     [Tooltip("플레이어가 현재 보유한 골드를 표시할 텍스트입니다.")]
     [SerializeField] private TMP_Text ownedGoldText;
-    [Tooltip("여관을 닫고 이벤트를 완료하는 나가기 버튼입니다.")]
-    [SerializeField] private Button exitButton;
+    [Tooltip("이미지와 텍스트를 포함하며 여관을 닫고 이벤트를 완료하는 나가기 오브젝트입니다.")]
+    [SerializeField] private GameObject exitButtonObject;
     [Tooltip("여관 종료를 처리할 상점·여관 흐름 관리자입니다.")]
     [SerializeField] private ShopInnFlowController flowController;
     private TMP_FontAsset runtimeFont;
     private bool restPurchased;
     private bool feastPurchased;
     private bool servicePurchased;
+    private Button exitButton;
 
     public void SetManager(InnManager manager)
     {
@@ -62,10 +63,18 @@ public class InnPanelUI : MonoBehaviour
 
     private void EnsureUI()
     {
-        if (exitButton == null)
+        if (exitButtonObject == null)
         {
             Transform found = transform.Find("Close Inn");
-            if (found != null) exitButton = found.GetComponent<Button>();
+            if (found != null) exitButtonObject = found.gameObject;
+        }
+        if (exitButtonObject != null)
+        {
+            exitButton = exitButtonObject.GetComponent<Button>();
+            if (exitButton == null) exitButton = exitButtonObject.AddComponent<Button>();
+            Image targetImage = exitButtonObject.GetComponent<Image>();
+            if (targetImage == null) targetImage = exitButtonObject.GetComponentInChildren<Image>(true);
+            if (targetImage != null) exitButton.targetGraphic = targetImage;
         }
         if (!HasCompleteUI()) BuildRuntimeUI();
         for (int i = 0; i < ServiceCount; i++)
