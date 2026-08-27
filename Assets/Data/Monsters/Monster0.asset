@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b2f2fb5ca2b9a24ea9d775006c20fb6, type: 3}
+  m_Name: Monster0
+  m_EditorClassIdentifier: Assembly-CSharp::MonsterData
+  monsterName: "\uAD34\uC870 \uAE4C\uB9C8\uADC0"
+  monsterImage: {fileID: -3561862214056923915, guid: 1ec4678cb335380458ec3d7f590f09b7, type: 3}
+  hp: 15
+  atk: 3
+  def: 2
+  coin: 8
+  atkImage: {fileID: 21300000, guid: d8a05aa6bd96e2f499fdaa48f00d4c70, type: 3}
+  defImage: {fileID: 8920735953785130164, guid: 6ba9c81397a67354c9879a493cb890b4, type: 3}
+  skillData: {fileID: 11400000, guid: 98b583081de64aaa890421960e97db98, type: 2}
+  skill1Id: 9a8a6d17-94d1-40cc-8499-0bcdfba09860
+  skill1Image: {fileID: -1741007838025643578, guid: 67df86f8970d8424e9ca1fb2bf604228, type: 3}
+  skill2Id: 
+  skill2Image: {fileID: -1741007838025643578, guid: 67df86f8970d8424e9ca1fb2bf604228, type: 3}
+  actionPattern1: 0
+  actionPattern2: 0
+  actionPattern3: 1
+  actionPattern4: 2
+  actionPattern5: 4

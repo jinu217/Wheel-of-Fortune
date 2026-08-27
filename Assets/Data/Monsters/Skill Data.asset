@@ -1,0 +1,117 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 33e8a5ca066a0e74cbff5b3f85b69fe2, type: 3}
+  m_Name: Skill Data
+  m_EditorClassIdentifier: Assembly-CSharp::SkillData
+  skills:
+  - id: 9a8a6d17-94d1-40cc-8499-0bcdfba09860
+    skillName: "\uC57D\uD654"
+    description: "\uB2E4\uC74C \uD134 \uD50C\uB808\uC774\uC5B4\uC758 \uACF5\uACA9\uB825\uC744 1 \uC904\uC778\uB2E4."
+    effectType: 4
+    effectValue: 1
+    durationTurns: 1
+  - id: 40c31115-f3ca-429e-95f4-eb2501e077f5
+    skillName: "\uC18C\uBA78"
+    description: "10 \uD53C\uD574\uB97C \uC8FC\uACE0 \uC18C\uBA78\uD55C\uB2E4. \uBCF4\uC0C1 \uC5C6\uC74C, \uB2A5\uB825\uACFC \uC6B0\uC5F0 \uC911 \uD558\uB098\uB97C \uC0AD\uC81C\uD55C\uB2E4."
+    effectType: 5
+    effectValue: 10
+    durationTurns: 0
+  - id: f014de88-a93b-4984-a40c-f470094fe823
+    skillName: "\uBD84\uB178"
+    description: "\uC790\uC2E0\uC758 \uACF5\uACA9\uB825\uC744 3 \uC62C\uB9B0\uB2E4."
+    effectType: 6
+    effectValue: 3
+    durationTurns: 0
+  - id: 8ec8ece9-f4dd-4c8c-994f-000000000004
+    skillName: "\uACF5\uC218 \uC804\uD658"
+    description: "\uACF5\uACA9\uB825 +2, \uBC29\uC5B4\uB825 -1. \uBC29\uC5B4\uB825\uC740 0 \uC774\uD558\uB85C \uB0B4\uB824\uAC00\uC9C0 \uC54A\uB294\uB2E4."
+    effectType: 7
+    effectValue: 0
+    durationTurns: 0
+  - id: 8ec8ece9-f4dd-4c8c-994f-000000000005
+    skillName: "\uAC15\uD55C \uC57D\uD0C8"
+    description: "10\uC758 \uD53C\uD574\uB97C \uC8FC\uACE0 \uACE8\uB4DC 5\uB97C \uAC15\uD0C8\uD55C\uB2E4."
+    effectType: 8
+    effectValue: 10
+    durationTurns: 0
+  - id: 8ec8ece9-f4dd-4c8c-994f-000000000006
+    skillName: "\uC2E4\uD328 \uC751\uC9D5"
+    description: "\uD50C\uB808\uC774\uC5B4\uC758 \uACF5\uACA9 \uC2E4\uD328 \uC2DC 10 \uD53C\uD574, \uBC29\uC5B4 \uC2E4\uD328 \uC2DC \uBC29\uC5B4 10\uC744 \uC5BB\uB294\uB2E4."
+    effectType: 9
+    effectValue: 10
+    durationTurns: 0
+  - id: 8ec8ece9-f4dd-4c8c-994f-000000000007
+    skillName: "\uB418\uAC10\uAE30"
+    description: "\uC9C1\uC804\uC5D0 \uD55C \uD589\uB3D9\uC744 2\uBC88 \uBC18\uBCF5\uD55C\uB2E4."
+    effectType: 10
+    effectValue: 2
+    durationTurns: 0
+  - id: 8ec8ece9-f4dd-4c8c-994f-000000000008
+    skillName: "\uBC29\uC5B4 \uBC18\uACA9"
+    description: "\uBC29\uC5B4 5\uB97C \uC5BB\uACE0 5\uC758 \uD53C\uD574\uB97C \uC900\uB2E4."
+    effectType: 11
+    effectValue: 5
+    durationTurns: 0
+  - id: 8ec8ece9-f4dd-4c8c-994f-000000000009
+    skillName: "\uD55C \uD134 \uC26C\uAE30"
+    description: "\uC544\uBB34 \uD589\uB3D9\uB3C4 \uD558\uC9C0 \uC54A\uB294\uB2E4."
+    effectType: 12
+    effectValue: 0
+    durationTurns: 0
+  - id: 8ec8ece9-f4dd-4c8c-994f-000000000010
+    skillName: "\uACF5\uACA9 \uCC28\uC9D5"
+    description: "\uBC29\uC5B4 5\uB97C \uC5BB\uB294\uB2E4."
+    effectType: 13
+    effectValue: 5
+    durationTurns: 0
+  - id: 8ec8ece9-f4dd-4c8c-994f-000000000011
+    skillName: "\uACF5\uACA9 \uCC28\uC9D5 \uBD80\uD558"
+    description: "\uC774\uD6C4 \uBC1B\uB294 \uD53C\uD574\uAC00 2\uBC30\uAC00 \uB41C\uB2E4."
+    effectType: 14
+    effectValue: 2
+    durationTurns: 0
+  - id: 8ec8ece9-f4dd-4c8c-994f-000000000012
+    skillName: "\uC8FC\uC0AC\uC704 \uAC15\uD654"
+    description: "1~6 \uC911 \uD558\uB098\uB97C \uBF51\uC544 \uACF5\uACA9\uB825\uACFC \uBC29\uC5B4\uB825\uC744 \uAC19\uC740 \uC218\uCE58\uB9CC\uD07C \uC62C\uB9B0\uB2E4."
+    effectType: 15
+    effectValue: 6
+    durationTurns: 0
+  - id: 8ec8ece9-f4dd-4c8c-994f-000000000013
+    skillName: "\uBC29\uC5B4\uC758 \uC77C\uACA9"
+    description: "\uC790\uC2E0\uC758 \uD604\uC7AC \uBC29\uC5B4\uB9CC\uD07C \uD50C\uB808\uC774\uC5B4\uB97C \uACF5\uACA9\uD55C\uB2E4."
+    effectType: 16
+    effectValue: 0
+    durationTurns: 0
+  - id: 8ec8ece9-f4dd-4c8c-994f-000000000014
+    skillName: "\uD68C\uBCF5\uC758 \uD734\uC2DD"
+    description: "\uD55C \uD134 \uC26C\uBA74\uC11C HP\uB97C 5 \uD68C\uBCF5\uD55C\uB2E4."
+    effectType: 17
+    effectValue: 5
+    durationTurns: 0
+  - id: 8ec8ece9-f4dd-4c8c-994f-000000000015
+    skillName: "\uBC29\uC5B4 \uAC15\uD0C8"
+    description: "\uD50C\uB808\uC774\uC5B4\uC758 \uD604\uC7AC \uBC29\uC5B4\uB97C \uBAA8\uB450 \uAC00\uC838\uC628\uB2E4."
+    effectType: 18
+    effectValue: 0
+    durationTurns: 0
+  - id: 8ec8ece9-f4dd-4c8c-994f-000000000016
+    skillName: "\uC555\uBC15\uC758 \uBC29\uD328"
+    description: "\uBC29\uC5B4 3\uC744 \uC5BB\uACE0, \uD604\uC7AC \uC804\uD22C\uC5D0\uC11C \uD50C\uB808\uC774\uC5B4\uC758 \uACF5\uACA9\uB825\uC744 1 \uC904\uC778\uB2E4."
+    effectType: 19
+    effectValue: 3
+    durationTurns: 0
+  - id: 8ec8ece9-f4dd-4c8c-994f-000000000017
+    skillName: "\uBAA8\uC774\uB77C\uC758 \uAC1C\uC785"
+    description: "\uB8F0\uB81B\uC758 \uCD08\uB85D\uC0C9 1\uCE78\uC744 \uBE68\uAC04\uC0C9\uC73C\uB85C \uBC14\uAFBC\uB2E4. \uCD08\uB85D\uC0C9\uC774 \uC5C6\uC73C\uBA74 \uBAAC\uC2A4\uD130\uAC00 30 \uD53C\uD574\uB97C \uC785\uB294\uB2E4."
+    effectType: 20
+    effectValue: 30
+    durationTurns: 0
